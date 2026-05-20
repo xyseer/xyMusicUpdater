@@ -1,0 +1,46 @@
+from django.contrib import admin
+from django.urls import path, re_path
+from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
+from core import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/status/', views.status_view),
+    path('api/songs/', views.songs_view),
+    path('api/songs/playlist-map/', views.playlist_map_view),
+    path('api/songs/auto-tag-all/', views.auto_tag_all_view),
+    path('api/songs/confirm-tags/', views.confirm_tags_view),
+    path('api/songs/reject-tags/', views.reject_tags_view),
+    path('api/songs/cleanup-history/', views.cleanup_history_view),
+    path('api/songs/<int:pk>/', views.song_detail_view),
+    path('api/songs/<int:pk>/cover/', views.song_cover_view),
+    path('api/songs/<int:pk>/revert/', views.revert_song_view),
+    path('api/jobs/', views.jobs_list),
+    path('api/jobs/<int:pk>/', views.job_detail),
+    path('api/jobs/manual/', views.manual_download),
+    path('api/jobs/cron/', views.trigger_cron),
+    path('api/scheduler/', views.scheduler_info_view),
+    path('api/scheduler/trigger/', views.trigger_task_view),
+    path('api/rescan/', views.rescan_view),
+    path('api/purge/', views.purge_view),
+    path('api/purge/upcoming/', views.upcoming_purges_view),
+    path('api/config/', views.get_config_view),
+    path('api/config/update/', views.update_config_view),
+    path('api/musicbrainz/search/', views.search_musicbrainz_view),
+    path('api/playlists/', views.playlists_view),
+    path('api/subscriptions/', views.subscriptions_view),
+    path('api/subscriptions/<int:pk>/', views.subscriptions_view),
+    path('api/subscriptions/run/', views.run_subscriptions_view),
+    path('api/permanent-log/', views.permanent_log_view),
+    path('api/events/', views.sse_stream),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Catch-all for React SPA (exclude /static and /api)
+urlpatterns += [
+    re_path(r'^(?!static|api|admin).*$', TemplateView.as_view(template_name='index.html')),
+]

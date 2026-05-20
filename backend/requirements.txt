@@ -1,0 +1,9 @@
+django
+djangorestframework
+django-cors-headers
+requests
+mutagen
+musicbrainzngs
+apscheduler
+yt-dlp
+whitenoise
