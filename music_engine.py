@@ -369,7 +369,7 @@ def _write_latest_m3u():
 def get_storage_info():
     cfg = _cfg(); folder = Path(cfg["TEMP_FOLDER"])
     used = sum(f.stat().st_size for f in folder.rglob("*") if f.is_file()) if folder.exists() else 0
-    total = int(cfg["MAX_STORAGE_SIZE"])
+    total = int(cfg.get("MAX_STORAGE_SIZE", 10)) * (1024**3)
     return {"used_bytes": used, "total_bytes": total, "percent": round(used/total*100, 1) if total else 0, "used_gb": round(used/1024**3, 2), "total_gb": round(total/1024**3, 2)}
 
 def storage_is_full():

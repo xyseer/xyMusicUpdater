@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import { useTranslation } from 'react-i18next';
 
 const inputGroup = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' };
@@ -7,6 +8,7 @@ const inputStyle = { padding: '8px 12px', borderRadius: 4, border: '1px solid va
 const saveBtnStyle = { padding: '8px 16px', borderRadius: 4, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
 export const SettingsPanel = ({ onUpdate, notify }) => {
+  const { t } = useTranslation();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,7 +53,16 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div style={inputGroup}>
-            <label style={labelStyle}>Hold Period (Days)</label>
+            <label style={labelStyle}>{t('settings.max_storage_size')}</label>
+            <input 
+              type="number" 
+              value={config.MAX_STORAGE_SIZE || 10} 
+              onChange={e => setConfig({...config, MAX_STORAGE_SIZE: e.target.value})}
+              style={inputStyle} 
+            />
+          </div>
+          <div style={inputGroup}>
+            <label style={labelStyle}>{t('settings.hold_period')}</label>
             <input 
               type="number" 
               value={config.HOLD_PERIOD_DAYS || 30} 
@@ -59,8 +70,11 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
               style={inputStyle} 
             />
           </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div style={inputGroup}>
-            <label style={labelStyle}>Max Deletions per Purge</label>
+            <label style={labelStyle}>{t('settings.max_deletions')}</label>
             <input 
               type="number" 
               value={config.MAX_DELETE_PER_PURGE || 100} 
@@ -68,11 +82,8 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
               style={inputStyle} 
             />
           </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div style={inputGroup}>
-            <label style={labelStyle}>Max Songs Per Source / Playlist</label>
+            <label style={labelStyle}>{t('settings.max_songs')}</label>
             <input 
               type="number" 
               value={config.MAX_SONGS_PER_SOURCE || 100} 
@@ -81,11 +92,11 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
             />
           </div>
           <div style={inputGroup}>
-            <label style={labelStyle}>Monitored Playlists (Comma separated)</label>
+            <label style={labelStyle}>{t('settings.monitored_playlists')}</label>
             <input 
               value={config.MONITORED_PLAYLISTS || ''} 
               onChange={e => setConfig({...config, MONITORED_PLAYLISTS: e.target.value})}
-              placeholder="e.g. tt, favorites (empty for ALL)"
+              placeholder={t('settings.monitored_playlists_placeholder')}
               style={inputStyle} 
             />
           </div>
@@ -93,7 +104,7 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div style={inputGroup}>
-            <label style={labelStyle}>Navidrome User</label>
+            <label style={labelStyle}>{t('settings.navidrome_user')}</label>
             <input 
               value={config.NAVIDROME_USER || ''} 
               onChange={e => setConfig({...config, NAVIDROME_USER: e.target.value})}
@@ -102,56 +113,56 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
             />
           </div>
           <div style={inputGroup}>
-            <label style={labelStyle}>Navidrome Password</label>
+            <label style={labelStyle}>{t('settings.navidrome_password')}</label>
             <input 
               type="password"
               value={config.NAVIDROME_PASSWORD === '********' ? '' : config.NAVIDROME_PASSWORD || ''} 
               onChange={e => setConfig({...config, NAVIDROME_PASSWORD: e.target.value})}
-              placeholder={config.NAVIDROME_PASSWORD === '********' ? "Password is set. Type to change." : "Password"}
+              placeholder={config.NAVIDROME_PASSWORD === '********' ? t('settings.password_set') : t('settings.password')}
               style={inputStyle} 
             />
           </div>
         </div>
 
         <div style={inputGroup}>
-          <label style={labelStyle}>yt-dlp Cookies (Netscape format, optional)</label>
+          <label style={labelStyle}>{t('settings.ytdlp_cookies')}</label>
           <textarea 
             value={config.YTDLP_COOKIES === '********' ? '' : config.YTDLP_COOKIES || ''} 
             onChange={e => setConfig({...config, YTDLP_COOKIES: e.target.value})}
-            placeholder={config.YTDLP_COOKIES === '********' ? "Cookies are set (encrypted). Paste new cookies to overwrite." : "Paste cookies.txt contents here to authenticate yt-dlp..."}
+            placeholder={config.YTDLP_COOKIES === '********' ? t('settings.ytdlp_cookies_placeholder_set') : t('settings.ytdlp_cookies_placeholder_empty')}
             style={{...inputStyle, minHeight: 80, fontFamily: 'monospace', fontSize: 11}} 
           />
-          <div style={{fontSize: 10, color: 'var(--text-dim)'}}>Required for private playlists. Export your cookies as a Netscape HTTP Cookie File.</div>
+          <div style={{fontSize: 10, color: 'var(--text-dim)'}}>{t('settings.ytdlp_cookies_hint')}</div>
         </div>
 
             <div style={inputGroup}>
-              <label style={labelStyle}>yt-dlp Proxy (optional)</label>
+              <label style={labelStyle}>{t('settings.ytdlp_proxy')}</label>
               <input 
                 value={config.YTDLP_PROXY || ''} 
                 onChange={e => setConfig({...config, YTDLP_PROXY: e.target.value})}
-                placeholder="e.g. http://127.0.0.1:1080"
+                placeholder={t('settings.ytdlp_proxy_placeholder')}
                 style={inputStyle} 
               />
-              <div style={{fontSize: 10, color: 'var(--text-dim)'}}>Useful if your server is in a geo-restricted region.</div>
+              <div style={{fontSize: 10, color: 'var(--text-dim)'}}>{t('settings.ytdlp_proxy_hint')}</div>
             </div>
 
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15}}>
               <div style={inputGroup}>
-                <label style={labelStyle}>yt-dlp Username (optional)</label>
+                <label style={labelStyle}>{t('settings.ytdlp_username')}</label>
                 <input 
                   value={config.YTDLP_USERNAME || ''} 
                   onChange={e => setConfig({...config, YTDLP_USERNAME: e.target.value})}
-                  placeholder="Username"
+                  placeholder={t('settings.username')}
                   style={inputStyle} 
                 />
               </div>
               <div style={inputGroup}>
-                <label style={labelStyle}>yt-dlp Password (optional)</label>
+                <label style={labelStyle}>{t('settings.ytdlp_password')}</label>
                 <input 
                   type="password"
                   value={config.YTDLP_PASSWORD === '********' ? '' : config.YTDLP_PASSWORD || ''} 
                   onChange={e => setConfig({...config, YTDLP_PASSWORD: e.target.value})}
-                  placeholder={config.YTDLP_PASSWORD === '********' ? "Password is set. Type to change." : "Password"}
+                  placeholder={config.YTDLP_PASSWORD === '********' ? t('settings.password_set') : t('settings.password')}
                   style={inputStyle} 
                 />
               </div>
@@ -159,7 +170,7 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
 
             <div style={{ borderTop: '1px solid #333', paddingTop: 20, display: 'flex', justifyContent: 'space-between' }}>
           <button type="submit" disabled={saving} style={saveBtnStyle}>
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? t('settings.saving') : t('settings.save_settings')}
           </button>
           
           <button 
@@ -170,7 +181,7 @@ export const SettingsPanel = ({ onUpdate, notify }) => {
               background: 'transparent', color: '#ff4d4d', cursor: 'pointer', fontWeight: 600 
             }}
           >
-            Cleanup History
+            {t('settings.cleanup_history')}
           </button>
         </div>
       </form>

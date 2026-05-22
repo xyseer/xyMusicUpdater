@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { api } from '../api';
+import { useTranslation } from 'react-i18next';
 
 const inputStyle = { padding: '6px 10px', borderRadius: 4, border: '1px solid var(--border)', background: '#0a0a0c', color: '#fff' };
 const editBtnStyle = { padding: '4px 12px', borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer' };
@@ -7,6 +8,7 @@ const saveBtnStyle = { padding: '6px 12px', borderRadius: 4, border: 'none', bac
 const dropzoneStyle = { padding: '12px', borderRadius: 4, border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center' };
 
 export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
+  const { t } = useTranslation();
   const displaySongs = songs.filter(s => (s.needs_tagging || s.pending_confirmation) && s.status === 'active');
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({});
@@ -169,17 +171,17 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
 
   return (
     <div style={{ background: 'var(--surface2)', padding: 16, borderRadius: 8 }}>
-      {displaySongs.length === 0 && <div style={{ color: 'var(--text-dim)' }}>No songs require manual tagging.</div>}
+      {displaySongs.length === 0 && <div style={{ color: 'var(--text-dim)' }}>{t('tagging.no_songs')}</div>}
       
       {displaySongs.length > 0 && (
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           {displaySongs.some(s => s.pending_confirmation) && (
              <button onClick={() => api.confirmTags(displaySongs.filter(s => s.pending_confirmation).map(s => s.id)).then(() => { notify("All drafted tags confirmed!"); onUpdate(); })} style={{...saveBtnStyle, background: 'var(--accent)'}}>
-               Confirm All Drafts
+               {t('tagging.confirm_all')}
              </button>
           )}
           <button onClick={handleAutoTagAll} disabled={isAutoTagging} style={saveBtnStyle}>
-            {isAutoTagging ? 'Auto-Tagging...' : 'Auto-Tag All Untagged'}
+            {isAutoTagging ? t('tagging.auto_tagging') : t('tagging.auto_tag_all')}
           </button>
         </div>
       )}
@@ -196,11 +198,11 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ fontWeight: 600 }}>
                 {s.filename}
-                {s.pending_confirmation && <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--green)', border: '1px solid var(--green)', padding: '2px 4px', borderRadius: 4 }}>DRAFT READY</span>}
+                {s.pending_confirmation && <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--green)', border: '1px solid var(--green)', padding: '2px 4px', borderRadius: 4 }}>{t('tagging.draft_ready')}</span>}
               </div>
               {pls.length > 0 && (
                 <div style={{ background: 'var(--accent)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 4, fontWeight: 800 }}>
-                  PROTECTED IN: {pls.join(', ')}
+                  {t('tagging.protected_in')} {pls.join(', ')}
                 </div>
               )}
             </div>
@@ -209,37 +211,37 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
               <div style={{ display: 'flex', gap: 20 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
-                    <input value={editingId === s.id ? formData.title : s.title} onChange={e => editingId === s.id ? setFormData({...formData, title: e.target.value}) : null} placeholder="Title" style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
-                    {s.pending_confirmation && s.original_tags?.title && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>Original: {s.original_tags.title}</div>}
+                    <input value={editingId === s.id ? formData.title : s.title} onChange={e => editingId === s.id ? setFormData({...formData, title: e.target.value}) : null} placeholder={t('tagging.title')} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
+                    {s.pending_confirmation && s.original_tags?.title && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.title}</div>}
                   </div>
                   <div>
-                    <input value={editingId === s.id ? formData.artist : s.artist} onChange={e => editingId === s.id ? setFormData({...formData, artist: e.target.value}) : null} placeholder="Artist" style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
-                    {s.pending_confirmation && s.original_tags?.artist && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>Original: {s.original_tags.artist}</div>}
+                    <input value={editingId === s.id ? formData.artist : s.artist} onChange={e => editingId === s.id ? setFormData({...formData, artist: e.target.value}) : null} placeholder={t('tagging.artist')} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
+                    {s.pending_confirmation && s.original_tags?.artist && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.artist}</div>}
                   </div>
                   <div>
-                    <input value={editingId === s.id ? formData.album : s.album} onChange={e => editingId === s.id ? setFormData({...formData, album: e.target.value}) : null} placeholder="Album" style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
-                    {s.pending_confirmation && s.original_tags?.album && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>Original: {s.original_tags.album}</div>}
+                    <input value={editingId === s.id ? formData.album : s.album} onChange={e => editingId === s.id ? setFormData({...formData, album: e.target.value}) : null} placeholder={t('tagging.album')} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
+                    {s.pending_confirmation && s.original_tags?.album && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.album}</div>}
                   </div>
                   <div>
-                    <input value={editingId === s.id ? formData.album_artist : s.album_artist} onChange={e => editingId === s.id ? setFormData({...formData, album_artist: e.target.value}) : null} placeholder="Album Artist" style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
-                    {s.pending_confirmation && s.original_tags?.album_artist && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>Original: {s.original_tags.album_artist}</div>}
+                    <input value={editingId === s.id ? formData.album_artist : s.album_artist} onChange={e => editingId === s.id ? setFormData({...formData, album_artist: e.target.value}) : null} placeholder={t('tagging.album_artist')} style={{...inputStyle, width: '100%', boxSizing: 'border-box'}} disabled={editingId !== s.id} />
+                    {s.pending_confirmation && s.original_tags?.album_artist && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.album_artist}</div>}
                   </div>
                   
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, textTransform: 'uppercase' }}>Current Cover</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, textTransform: 'uppercase' }}>{t('tagging.current_cover')}</div>
                       <div style={{ width: 100, height: 100, background: 'var(--surface)', borderRadius: 4, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <img 
                           src={`/api/songs/${s.id}/cover/?t=${Date.now()}`} 
                           alt="Current Cover" 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML='<span style="color:#555;font-size:10px;">NO COVER</span>'; }}
+                          onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML=`<span style="color:#555;font-size:10px;">${t('tagging.no_cover')}</span>`; }}
                         />
                       </div>
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, textTransform: 'uppercase' }}>New Cover {editingId === s.id ? '(Click to change)' : ''}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, textTransform: 'uppercase' }}>{t('tagging.new_cover')} {editingId === s.id ? t('tagging.click_to_change') : ''}</div>
                       <div 
                         onDragEnter={editingId === s.id ? onDragEnter : undefined}
                         onDragOver={editingId === s.id ? onDragOver : undefined} 
@@ -253,7 +255,7 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
                         {(editingId === s.id && formData.cover_url) ? (
                             <img src={formData.cover_url} alt="New Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                         ) : (
-                          <div style={{ color: 'var(--text-dim)', fontSize: 10, textAlign: 'center', padding: 10, pointerEvents: 'none' }}>Use Current</div>
+                          <div style={{ color: 'var(--text-dim)', fontSize: 10, textAlign: 'center', padding: 10, pointerEvents: 'none' }}>{t('tagging.use_current')}</div>
                         )}
                       </div>
                     </div>
@@ -262,16 +264,16 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     {editingId === s.id ? (
                       <>
-                        <button onClick={() => save(s.id)} style={{...saveBtnStyle, flex: 1}}>Save Tags</button>
-                        <button onClick={() => handleRevert(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff9800', border: '1px solid #ff9800' }}>Use Original</button>
-                        <button onClick={() => {setEditingId(null); if (s.pending_confirmation) handleReject(s.id);}} style={{ ...saveBtnStyle, background: 'var(--surface)', color: '#fff', border: '1px solid #555' }}>Cancel</button>
+                        <button onClick={() => save(s.id)} style={{...saveBtnStyle, flex: 1}}>{t('tagging.save_tags')}</button>
+                        <button onClick={() => handleRevert(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff9800', border: '1px solid #ff9800' }}>{t('tagging.use_original')}</button>
+                        <button onClick={() => {setEditingId(null); if (s.pending_confirmation) handleReject(s.id);}} style={{ ...saveBtnStyle, background: 'var(--surface)', color: '#fff', border: '1px solid #555' }}>{t('tagging.cancel')}</button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => handleConfirm(s.id)} style={{...saveBtnStyle, flex: 1, background: 'var(--accent)'}}>Confirm Draft</button>
-                        <button onClick={() => startEdit(s)} style={{ ...saveBtnStyle, background: 'transparent', color: 'var(--accent)', border: '1px solid var(--accent)' }}>Edit Draft</button>
-                        <button onClick={() => handleReject(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff4d4d', border: '1px solid #ff4d4d' }}>Reject</button>
-                        <button onClick={() => handleRevert(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff9800', border: '1px solid #ff9800' }}>Use Original</button>
+                        <button onClick={() => handleConfirm(s.id)} style={{...saveBtnStyle, flex: 1, background: 'var(--accent)'}}>{t('tagging.confirm_draft')}</button>
+                        <button onClick={() => startEdit(s)} style={{ ...saveBtnStyle, background: 'transparent', color: 'var(--accent)', border: '1px solid var(--accent)' }}>{t('tagging.edit_draft')}</button>
+                        <button onClick={() => handleReject(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff4d4d', border: '1px solid #ff4d4d' }}>{t('tagging.reject')}</button>
+                        <button onClick={() => handleRevert(s.id)} style={{ ...saveBtnStyle, background: 'transparent', color: '#ff9800', border: '1px solid #ff9800' }}>{t('tagging.use_original')}</button>
                       </>
                     )}
                   </div>
@@ -281,8 +283,8 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
                 {editingId === s.id && (
                   <div style={{ flex: 1, borderLeft: '1px solid #333', paddingLeft: 20 }}>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                      <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && performSearch()} placeholder="Search" style={{ ...inputStyle, flex: 1 }} />
-                      <button onClick={performSearch} disabled={isSearching} style={saveBtnStyle}>{isSearching ? '...' : 'Search'}</button>
+                      <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && performSearch()} placeholder={t('tagging.search')} style={{ ...inputStyle, flex: 1 }} />
+                      <button onClick={performSearch} disabled={isSearching} style={saveBtnStyle}>{isSearching ? '...' : t('tagging.search')}</button>
                     </div>
                     {searchResults.map((res, i) => (
                       <div key={i} style={{ display: 'flex', gap: 12, padding: 8, background: 'var(--surface)', borderRadius: 4, cursor: 'pointer', marginBottom: 4 }} onClick={() => applyResult(res)}>
@@ -298,8 +300,8 @@ export const TaggingPanel = ({ songs, playlistMap = {}, onUpdate, notify }) => {
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => startEdit(s)} style={editBtnStyle}>Edit Metadata</button>
-                <button onClick={() => handleDelete(s.id)} style={{ ...editBtnStyle, color: '#ff4d4d', borderColor: '#ff4d4d' }}>Delete</button>
+                <button onClick={() => startEdit(s)} style={editBtnStyle}>{t('tagging.edit_metadata')}</button>
+                <button onClick={() => handleDelete(s.id)} style={{ ...editBtnStyle, color: '#ff4d4d', borderColor: '#ff4d4d' }}>{t('tagging.delete')}</button>
               </div>
             )}
           </div>

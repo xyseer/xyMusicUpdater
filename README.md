@@ -1,4 +1,4 @@
-# Navidrome Music Manager
+# MusicUpdater
 
 A comprehensive, containerized system for intelligently fetching, tagging, and managing your music library for Navidrome. It combines a powerful Django/yt-dlp backend with a modern React frontend dashboard.
 
@@ -65,6 +65,9 @@ All critical settings are configurable via the **Settings** tab in the web dashb
 3. **Fetch & Tag**: `yt-dlp` fetches the audio. The engine queries MusicBrainz/iTunes.
 4. **Supervise**: Open the **Manual Tagging** tab to review the drafted metadata side-by-side with original file tags. Confirm, Reject, or Use Original.
 5. **Sync**: Confirmed tags are written to the `.mp3` file via Mutagen, and the Navidrome database is forcibly synced.
+
+## Next Version Goals (v1.1+)
+- **Music Editor**: Add a simple music editor to cut some track beginning/ending directly from the web interface.
 
 ## License
 MIT License.

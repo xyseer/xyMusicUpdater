@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Music, ChevronDown, ChevronRight, Archive } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const SongTable = ({ songs, playlistMap = {} }) => {
+  const { t } = useTranslation();
   const [showArchived, setShowArchived] = useState(false);
 
   const activeSongs = songs.filter(s => s.status === 'active');
@@ -18,12 +20,12 @@ export const SongTable = ({ songs, playlistMap = {} }) => {
         <td style={tdStyle}>
           {song.status === 'moved' ? (
             <span style={{ color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Archive size={12} /> Archived
+              <Archive size={12} /> {t('song_table.archived')}
             </span>
           ) : song.needs_tagging ? (
-            <span style={{ color: 'orange' }}>Untagged</span>
+            <span style={{ color: 'orange' }}>{t('song_table.untagged')}</span>
           ) : (
-            <span style={{ color: 'var(--green)' }}>Ready</span>
+            <span style={{ color: 'var(--green)' }}>{t('song_table.ready')}</span>
           )}
         </td>
         <td style={tdStyle}>
@@ -51,17 +53,17 @@ export const SongTable = ({ songs, playlistMap = {} }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.03)', textAlign: 'left' }}>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Title / Artist</th>
-              <th style={thStyle}>Playlists</th>
-              <th style={thStyle}>Source</th>
+              <th style={thStyle}>{t('song_table.status')}</th>
+              <th style={thStyle}>{t('song_table.title_artist')}</th>
+              <th style={thStyle}>{t('song_table.playlists')}</th>
+              <th style={thStyle}>{t('song_table.source')}</th>
             </tr>
           </thead>
           <tbody>
             {activeSongs.map(renderRow)}
             {activeSongs.length === 0 && (
               <tr>
-                <td colSpan="4" style={{ padding: 20, textAlign: 'center', color: '#555' }}>No active songs.</td>
+                <td colSpan="4" style={{ padding: 20, textAlign: 'center', color: '#555' }}>{t('song_table.no_active')}</td>
               </tr>
             )}
           </tbody>
@@ -78,7 +80,7 @@ export const SongTable = ({ songs, playlistMap = {} }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--text-dim)' }}>
-              <Archive size={14} /> ARCHIVED SONGS ({archivedSongs.length})
+              <Archive size={14} /> {t('song_table.archived_songs')} ({archivedSongs.length})
             </div>
             {showArchived ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </div>

@@ -80,7 +80,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 MUSIC_CONFIG = {
     "TEMP_FOLDER": os.environ.get("TEMP_FOLDER", "/music/temp"),
     "PERMANENT_SAVING_DIR": os.environ.get("PERMANENT_SAVING_DIR", "/music/permanent"),
-    "MAX_STORAGE_SIZE": int(os.environ.get("MAX_STORAGE_SIZE", "10737418240")),
+    "MAX_STORAGE_SIZE": int(os.environ.get("MAX_STORAGE_SIZE", "10")),
     "PURGE_BATCH_SIZE": int(os.environ.get("PURGE_BATCH_SIZE", "20")),
     "SOURCES": {
         "Default": os.environ.get("SOURCES", "https://www.youtube.com/playlist?list=PLzXW0R_iJb6jO_H6V9lFfC4h9a-6Y-oO").split(","),
@@ -92,7 +92,8 @@ MUSIC_CONFIG = {
     "NAVIDROME_URL": os.environ.get("NAVIDROME_URL", "http://navidrome:4533"),
     "NAVIDROME_USER": os.environ.get("NAVIDROME_USER", "admin"),
     "NAVIDROME_PASSWORD": os.environ.get("NAVIDROME_PASSWORD", "changeme"),
-    "DISCOVERY_INTERVAL_MINS": int(os.environ.get("DISCOVERY_INTERVAL_MINS", "60")),
+    "DAEMON_INTERVAL_HOURS": int(os.environ.get("DAEMON_INTERVAL_HOURS", "24")),
+    "DISCOVERY_INTERVAL_HOURS": int(os.environ.get("DISCOVERY_INTERVAL_HOURS", "24")),
     "YTDLP_COOKIES": os.environ.get("YTDLP_COOKIES", ""),
     "YTDLP_USERNAME": os.environ.get("YTDLP_USERNAME", ""),
     "YTDLP_PASSWORD": os.environ.get("YTDLP_PASSWORD", ""),

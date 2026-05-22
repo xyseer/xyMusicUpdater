@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from './api';
 import { useSSE } from './hooks/useSSE';
 import { 
@@ -58,6 +59,7 @@ const Toast = ({ message, type, onClose }) => (
 );
 
 const App = () => {
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('library');
   const [status, setStatus] = useState(null);
   const [songs, setSongs] = useState([]);
@@ -119,7 +121,7 @@ const App = () => {
             <Music size={20} color="#fff" />
           </div>
           <div>
-            <h1 style={{ fontSize: 18, margin: 0 }}>MusicUpdater</h1>
+            <h1 style={{ fontSize: 18, margin: 0 }}>{t('app.title')}</h1>
             <div style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? 'var(--green)' : 'var(--red)', boxShadow: isLive ? '0 0 8px var(--green)' : 'none' }}></div>
               {isLive ? 'SYSTEM LIVE' : 'CONNECTING...'}
@@ -127,7 +129,16 @@ const App = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <select 
+            value={i18n.language} 
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            style={{ padding: '6px', borderRadius: 4, background: 'var(--surface2)', color: '#fff', border: '1px solid var(--border)' }}
+          >
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ja">日本語</option>
+          </select>
           <button onClick={handleRescan} disabled={isRescanning} style={layout.actionBtn}>
             <RefreshCw size={14} className={isRescanning ? 'spin' : ''} /> Rescan
           </button>
@@ -139,13 +150,13 @@ const App = () => {
 
       <div style={layout.main}>
         <nav style={layout.sidebar}>
-          <NavBtn id="library" icon={<Database size={18}/>} label="Library" active={activeTab} setter={setActiveTab} />
-          <NavBtn id="tagging" icon={<Tag size={18}/>} label="Manual Tagging" active={activeTab} count={songs.filter(s => (s.needs_tagging || s.pending_confirmation) && s.status === 'active').length} setter={setActiveTab} />
-          <NavBtn id="discovery" icon={<Download size={18}/>} label="Downloads" setter={setActiveTab} active={activeTab} />
-          <NavBtn id="jobs" icon={<History size={18}/>} label="Job History" active={activeTab} setter={setActiveTab} />
-          <NavBtn id="scheduler" icon={<Clock size={18}/>} label="Scheduler" active={activeTab} setter={setActiveTab} />
-          <NavBtn id="purge" icon={<Trash2 size={18}/>} label="Purge Analysis" active={activeTab} setter={setActiveTab} />
-          <NavBtn id="settings" icon={<Settings size={18}/>} label="Settings" active={activeTab} setter={setActiveTab} />
+          <NavBtn id="library" icon={<Database size={18}/>} label={t('app.library')} active={activeTab} setter={setActiveTab} />
+          <NavBtn id="tagging" icon={<Tag size={18}/>} label={t('app.manual_tagging')} active={activeTab} count={songs.filter(s => (s.needs_tagging || s.pending_confirmation) && s.status === 'active').length} setter={setActiveTab} />
+          <NavBtn id="discovery" icon={<Download size={18}/>} label={t('app.downloads')} setter={setActiveTab} active={activeTab} />
+          <NavBtn id="jobs" icon={<History size={18}/>} label={t('app.job_history')} active={activeTab} setter={setActiveTab} />
+          <NavBtn id="scheduler" icon={<Clock size={18}/>} label={t('app.scheduler')} active={activeTab} setter={setActiveTab} />
+          <NavBtn id="purge" icon={<Trash2 size={18}/>} label={t('app.purge_analysis')} active={activeTab} setter={setActiveTab} />
+          <NavBtn id="settings" icon={<Settings size={18}/>} label={t('app.settings')} active={activeTab} setter={setActiveTab} />
           
           <div style={{ marginTop: 'auto', padding: '10px 0' }}>
             <StorageBar storage={status?.storage} />

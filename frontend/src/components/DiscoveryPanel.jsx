@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Trash2, Play, Plus, Link, Search, Edit2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const inputGroup = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 };
@@ -9,6 +10,7 @@ const saveBtnStyle = { padding: '8px 16px', borderRadius: 4, border: 'none', bac
 const secondaryBtnStyle = { padding: '8px 16px', borderRadius: 4, border: '1px solid var(--border)', background: 'transparent', color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center' };
 
 export const DiscoveryPanel = ({ notify }) => {
+  const { t } = useTranslation();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -95,29 +97,29 @@ export const DiscoveryPanel = ({ notify }) => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h3 style={{ margin: 0 }}>Automated Discovery</h3>
+        <h3 style={{ margin: 0 }}>{t('downloads.automated_discovery')}</h3>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={handleRunAll} style={secondaryBtnStyle}>
-            <Play size={14} style={{ marginRight: 6 }} /> Run All Now
+            <Play size={14} style={{ marginRight: 6 }} /> {t('downloads.run_all')}
           </button>
           <button onClick={isAdding ? cancelEdit : () => setIsAdding(true)} style={saveBtnStyle}>
             {isAdding ? <X size={14} style={{ marginRight: 6 }} /> : <Plus size={14} style={{ marginRight: 6 }} />} 
-            {isAdding ? 'Cancel' : 'Add Subscription'}
+            {isAdding ? t('downloads.cancel') : t('downloads.add_subscription')}
           </button>
         </div>
       </div>
 
       {isAdding && (
         <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8, marginBottom: 20, border: editingId ? '1px solid var(--accent)' : 'none' }}>
-          <h4 style={{ marginTop: 0, marginBottom: 15, color: 'var(--accent)' }}>{editingId ? 'Edit Subscription' : 'New Subscription'}</h4>
+          <h4 style={{ marginTop: 0, marginBottom: 15, color: 'var(--accent)' }}>{editingId ? t('discovery.edit_sub') : t('discovery.new_sub')}</h4>
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={inputGroup}>
-              <label style={labelStyle}>Subscription Label (e.g. My Favorite Playlist)</label>
+              <label style={labelStyle}>{t('discovery.label')}</label>
               <input value={newSub.label} onChange={e => setNewSub({...newSub, label: e.target.value})} style={inputStyle} placeholder="Label for this task" required />
             </div>
             <div style={inputGroup}>
               <label style={labelStyle}>
-                <Link size={12} /> Keywords or Playlist Links (Comma separated)
+                <Link size={12} /> {t('discovery.keywords')}
               </label>
               <textarea 
                 value={newSub.keywords} 
@@ -127,35 +129,35 @@ export const DiscoveryPanel = ({ notify }) => {
                 required 
               />
               <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
-                System will scan these links periodically and download only NEW songs.
+                {t('discovery.keywords_desc')}
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               <div style={inputGroup}>
-                <label style={labelStyle}>Amount per entry (for keywords)</label>
+                <label style={labelStyle}>{t('discovery.amount')}</label>
                 <input type="number" value={newSub.amount} onChange={e => setNewSub({...newSub, amount: e.target.value})} style={inputStyle} />
               </div>
               <div style={inputGroup}>
-                <label style={labelStyle}>Cycle Days</label>
+                <label style={labelStyle}>{t('discovery.cycle_days')}</label>
                 <input type="number" value={newSub.cycle_days} onChange={e => setNewSub({...newSub, cycle_days: e.target.value})} style={inputStyle} />
               </div>
             </div>
-            <button type="submit" style={saveBtnStyle}>{editingId ? 'Update Subscription' : 'Save Subscription'}</button>
+            <button type="submit" style={saveBtnStyle}>{editingId ? t('discovery.update') : t('discovery.save')}</button>
           </form>
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {subs.length === 0 && <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: 40 }}>No discovery subscriptions yet.</div>}
+        {subs.length === 0 && <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: 40 }}>{t('discovery.no_subs')}</div>}
         {subs.map(sub => (
           <div key={sub.id} style={{ background: 'var(--surface2)', padding: 16, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--accent)', marginBottom: 4 }}>{sub.label}</div>
               <div style={{ fontSize: 13, color: '#ccc', marginBottom: 4, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                Targets: {sub.keywords}
+                {t('discovery.targets')}: {sub.keywords}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                Every {sub.cycle_days} days • Fetch top {sub.amount} • Last run: {sub.last_run ? new Date(sub.last_run).toLocaleString() : 'Never'}
+                {t('discovery.every')} {sub.cycle_days} {t('discovery.days')} • {t('discovery.fetch_top')} {sub.amount} • {t('discovery.last_run')}: {sub.last_run ? new Date(sub.last_run).toLocaleString() : t('discovery.never')}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 5 }}>

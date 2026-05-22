@@ -38,23 +38,23 @@ class CoreConfig(AppConfig):
         cfg = _cfg()
         
         # 1. Main Pipeline (Cron)
-        # Default 6 hours
-        interval_main = int(cfg.get("DAEMON_INTERVAL", 21600)) 
+        # Default 24 hours
+        interval_main = int(cfg.get("DAEMON_INTERVAL_HOURS", 24)) 
         self._scheduler.add_job(
             scheduled_pipeline, 
             'interval', 
-            seconds=interval_main, 
+            hours=interval_main, 
             id='music_pipeline',
             replace_existing=True
         )
 
         # 2. Discovery Pipeline
-        # Default 60 minutes
-        interval_discovery = int(cfg.get("DISCOVERY_INTERVAL_MINS", 60))
+        # Default 24 hours
+        interval_discovery = int(cfg.get("DISCOVERY_INTERVAL_HOURS", 24))
         self._scheduler.add_job(
             run_search_subscriptions,
             'interval',
-            minutes=interval_discovery,
+            hours=interval_discovery,
             id='discovery_pipeline',
             replace_existing=True
         )

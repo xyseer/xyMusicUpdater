@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { api } from '../api';
 import { Download, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const ManualDownload = ({ onJobStarted }) => {
+  const { t } = useTranslation();
   const [inputVal, setInputVal] = useState('');
   const [allowPlaylist, setAllowPlaylist] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -51,18 +53,18 @@ export const ManualDownload = ({ onJobStarted }) => {
 
   return (
     <div>
-      <div style={{ marginBottom: 10, fontWeight: 700, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text-dim)' }}>Manual Download / Search</div>
+      <div style={{ marginBottom: 10, fontWeight: 700, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text-dim)' }}>{t('downloads.title')}</div>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10 }}>
           <input 
             type="text" 
             value={inputVal} 
             onChange={(e) => setInputVal(e.target.value)} 
-            placeholder="Paste URL or type keywords to search YouTube..." 
+            placeholder={t('downloads.placeholder')} 
             style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid var(--border)', background: '#1c1c21', color: '#fff' }}
           />
           <button type="submit" disabled={isSearching} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isSearching ? '...' : (isUrl ? <><Download size={14}/> Download</> : <><Search size={14}/> Search</>)}
+            {isSearching ? '...' : (isUrl ? <><Download size={14}/> {t('downloads.download')}</> : <><Search size={14}/> {t('downloads.search')}</>)}
           </button>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
@@ -71,7 +73,7 @@ export const ManualDownload = ({ onJobStarted }) => {
             checked={allowPlaylist} 
             onChange={(e) => setAllowPlaylist(e.target.checked)} 
           />
-          Enable whole playlist download
+          {t('downloads.enable_playlist')}
         </label>
       </form>
 
@@ -88,11 +90,11 @@ export const ManualDownload = ({ onJobStarted }) => {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => triggerDownload(res.url)} style={{ padding: '6px 12px', borderRadius: 4, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Download size={12}/> Fetch
+                    <Download size={12}/> {t('downloads.fetch')}
                   </button>
                   {res.id && res.url && res.url.includes('youtube.com') && (
                     <button onClick={() => triggerDownload(`https://www.youtube.com/watch?v=${res.id}&list=RD${res.id}`, true)} style={{ padding: '6px 12px', borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }} title="Download YouTube Mix (Radio) for this song">
-                      <Download size={12}/> Fetch Mix
+                      <Download size={12}/> {t('downloads.fetch_mix')}
                     </button>
                   )}
                 </div>
