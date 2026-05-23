@@ -133,14 +133,14 @@ def fetch_all_sources(job=None):
         for url in urls: all_files.extend(_ytdlp_download(url, temp, label, max_items=limit, job=job))
     return all_files
 
-def download_url(url: str, job=None, allow_playlist: bool = False) -> list[Path]:
+def download_url(url: str, job=None, allow_playlist: bool = False, override_duplicate: bool = False) -> list[Path]:
     cfg = _cfg(); temp = Path(cfg["TEMP_FOLDER"]); temp.mkdir(parents=True, exist_ok=True)
     limit = int(cfg.get("MAX_SONGS_PER_SOURCE", 100))
     if not job:
         from .models import DownloadJob
         job = DownloadJob.objects.create(job_type="manual", status="running", url=url)
     emit(f"Starting Download: {url}", job=job)
-    files = _ytdlp_download(url, temp, "manual", max_items=limit, job=job, allow_playlist=allow_playlist)
+    files = _ytdlp_download(url, temp, "manual", max_items=limit, job=job, allow_playlist=allow_playlist, override_duplicate=override_duplicate)
     job.status = "done"; job.finished_at = dj_tz.now(); job.save()
     emit(f"Download Finished. {len(files)} files obtained.", job=job)
     return files
@@ -169,10 +169,10 @@ def _sanitize_ytdlp_out(text, cfg):
                 if len(val) > 5: s = s.replace(val, "********")
     return s
 
-def _ytdlp_download(url, dest, label, max_items=10, job=None, allow_playlist=True):
+def _ytdlp_download(url, dest, label, max_items=10, job=None, allow_playlist=True, override_duplicate=False):
     emit(f"Analyzing source: {url}", job=job)
     cfg = _cfg()
-    cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--flat-playlist", "--dump-json", "--playlist-end", str(max_items)]
+    cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(max_items)]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None
@@ -230,9 +230,18 @@ def _ytdlp_download(url, dest, label, max_items=10, job=None, allow_playlist=Tru
             try:
                 entry = json.loads(line)
                 title, vid, uploader = entry.get("title"), entry.get("url") or entry.get("id"), entry.get("uploader", "")
+                
+                # SKIP channels/users/playlists to prevent yt-dlp from hanging on massive catalogs
+                is_container = entry.get("_type") in ["url", "playlist"] and any(x in vid.lower() for x in ["/channel/", "/user/", "/@", "/playlist?list="])
+                if is_container:
+                    emit(f"Skip Container: {title}", job=job)
+                    continue
+
                 if vid and title:
-                    if _is_duplicate(title, uploader): emit(f"Skip Duplicate: {title}", job=job)
-                    else: targets.append((title, vid))
+                    if not override_duplicate and _is_duplicate(title, uploader): 
+                        emit(f"Skip Duplicate: {title}", job=job)
+                    else: 
+                        targets.append((title, vid))
             except: continue
             
         # Log yt-dlp warnings/errors aggressively but sanitized
@@ -260,7 +269,7 @@ def _ytdlp_download(url, dest, label, max_items=10, job=None, allow_playlist=Tru
     
     for title, vid in targets:
         emit(f"Downloading: {title}", job=job)
-        cmd = ["yt-dlp", "--js-runtimes", "node", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
+        cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         
         if cookies_raw:
             if cookies_file and cookies_file.exists():
@@ -469,24 +478,37 @@ def _delete_from_navidrome_db(file_path):
 
 # ── Discovery Logic ───────────────────────────────────────────────────────
 
-def run_search_subscriptions(force=False):
+def run_single_subscription(sub_id):
     from .models import SearchSubscription, DownloadJob
-    cfg = _cfg(); temp = Path(cfg["TEMP_FOLDER"]); subs = SearchSubscription.objects.filter(active=True)
+    try:
+        sub = SearchSubscription.objects.get(pk=sub_id)
+        if not sub.active: return
+    except SearchSubscription.DoesNotExist: return
+
+    cfg = _cfg(); temp = Path(cfg["TEMP_FOLDER"])
+    job = DownloadJob.objects.create(job_type="manual", status="running", created_at=dj_tz.now(), url=f"Discovery: {sub.label}")
+    emit(f"Discovery Started: {sub.label}", job=job)
+    keywords = [k.strip() for k in sub.keywords.split(",") if k.strip()]
+    newly_added = 0
+    for kw in keywords:
+        search_query = kw if kw.startswith("http") else f"ytsearch{sub.amount}:{kw}"
+        files = _ytdlp_download(search_query, temp, f"discovery_{sub.id}", max_items=sub.amount, job=job, allow_playlist=True)
+        if files: newly_added += len(register_songs(files, source=f"discovery:{sub.label}", job=job))
+    sub.last_run = dj_tz.now(); sub.save(); job.status="done"; job.finished_at=dj_tz.now(); job.save()
+    emit(f"Discovery Finished: {sub.label}", job=job)
+    return newly_added
+
+def run_search_subscriptions(force=False):
+    from .models import SearchSubscription
+    subs = SearchSubscription.objects.filter(active=True)
+    any_added = False
     for sub in subs:
-        if not force and sub.last_run and dj_tz.now() < sub.last_run + timedelta(days=sub.cycle_days): continue
-        job = DownloadJob.objects.create(job_type="manual", status="running", created_at=dj_tz.now(), url=f"Discovery: {sub.label}")
-        emit(f"Discovery Started: {sub.label}", job=job)
-        keywords = [k.strip() for k in sub.keywords.split(",") if k.strip()]
-        newly_added = 0
-        for kw in keywords:
-            # SUPPORT: Keyword search or Link
-            search_query = kw if kw.startswith("http") else f"ytsearch{sub.amount}:{kw}"
-            files = _ytdlp_download(search_query, temp, f"discovery_{sub.id}", max_items=sub.amount, job=job, allow_playlist=True)
-            if files: newly_added += len(register_songs(files, source=f"discovery:{sub.label}", job=job))
-        sub.last_run = dj_tz.now(); sub.save(); job.status="done"; job.finished_at=dj_tz.now(); job.save()
-        emit(f"Discovery Finished: {sub.label}", job=job)
-        if newly_added > 0: navidrome_rescan(job=job); purge_oldest_songs(job=job)
-    if subs.exists(): navidrome_rescan()
+        if force or not sub.last_run or dj_tz.now() >= sub.last_run + timedelta(days=sub.cycle_days):
+            added = run_single_subscription(sub.id)
+            if added and added > 0: any_added = True
+    if any_added: 
+        navidrome_rescan()
+        purge_oldest_songs()
 
 # ── Song Registry & API ───────────────────────────────────────────────────
 
@@ -540,7 +562,7 @@ def search_media(query, limit=10):
     import subprocess, json
     from pathlib import Path
     cfg = _cfg()
-    cmd = ["yt-dlp", "--js-runtimes", "node", "--dump-json", "--flat-playlist", f"ytsearch{limit}:{query}"]
+    cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--dump-json", "--flat-playlist", f"ytsearch{limit}:{query}"]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None
@@ -576,73 +598,17 @@ def search_media(query, limit=10):
                 url = entry.get("url")
                 if not url and entry.get("id"):
                     url = f"https://www.youtube.com/watch?v={entry.get('id')}"
+                
+                # FILTER: Skip channels/users/playlists in manual search results too
+                if entry.get("_type") in ["url", "playlist"] and any(x in url.lower() for x in ["/channel/", "/user/", "/@", "/playlist?list="]):
+                    continue
+
                 if url:
                     # Extract the best available thumbnail
                     thumb = entry.get("thumbnail")
                     if not thumb and entry.get("thumbnails"):
                         thumb = entry["thumbnails"][0].get("url")
                     
-                    results.append({
-                        "id": entry.get("id"),
-                        "title": entry.get("title"),
-                        "uploader": entry.get("uploader"),
-                        "duration": entry.get("duration"),
-                        "url": url,
-                        "thumbnail": thumb
-                    })
-            except Exception: continue
-        return results
-    except Exception as e:
-        raise Exception(f"Media search failed: {e}")
-    finally:
-        if cookies_file and cookies_file.exists():
-            try: cookies_file.unlink()
-            except: pass
-
-def search_media(query, limit=10):
-    import subprocess, json
-    from pathlib import Path
-    cfg = _cfg()
-    cmd = ["yt-dlp", "--js-runtimes", "node", "--dump-json", "--flat-playlist", f"ytsearch{limit}:{query}"]
-    
-    cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
-    cookies_file = None
-    
-    if cookies_raw:
-        cookies_file = Path(cfg["TEMP_FOLDER"]) / "ytdlp_cookies_search.txt"
-        try:
-            if cookies_raw.startswith("# Netscape") or "\t" in cookies_raw:
-                cookies_file.write_text(cookies_raw + "\n", encoding="utf-8")
-            else:
-                header_val = cookies_raw
-                if header_val.lower().startswith("cookie:"): header_val = header_val[7:].strip()
-                lines = ["# Netscape HTTP Cookie File"]
-                domain = ".youtube.com"
-                for part in header_val.split(";"):
-                    if "=" in part:
-                        name, val = part.strip().split("=", 1)
-                        lines.append(f"{domain}\tTRUE\t/\tFALSE\t0\t{name}\t{val}")
-                cookies_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            cmd.extend(["--cookies", str(cookies_file)])
-        except Exception: pass
-
-    if cfg.get("YTDLP_PROXY"):
-        cmd.extend(["--proxy", cfg["YTDLP_PROXY"]])
-        
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        out = result.stdout
-        results = []
-        for line in out.splitlines():
-            try:
-                entry = json.loads(line)
-                url = entry.get("url")
-                if not url and entry.get("id"):
-                    url = f"https://www.youtube.com/watch?v={entry.get('id')}"
-                if url:
-                    thumb = entry.get("thumbnail")
-                    if not thumb and entry.get("thumbnails"):
-                        thumb = entry["thumbnails"][0].get("url")
                     results.append({
                         "id": entry.get("id"),
                         "title": entry.get("title"),

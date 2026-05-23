@@ -66,6 +66,7 @@ const resources = {
         "download": "Download",
         "search": "Search",
         "enable_playlist": "Enable whole playlist download",
+        "override_duplicate": "Force download (ignore duplicates)",
         "fetch": "Fetch",
         "fetch_mix": "Fetch Mix",
         "automated_discovery": "Automated Discovery",
@@ -133,8 +134,8 @@ const resources = {
         "title": "Background Tasks",
         "refresh": "Refresh Status",
         "loading": "Loading scheduler info...",
-        "pipeline_name": "Main Music Pipeline (Fetch/Tag/Purge)",
-        "discovery_name": "Keyword Discovery Engine",
+        "pipeline_name": "Main Music Pipeline",
+        "discovery_name": "Discovery",
         "next_run": "Next Execution:",
         "not_scheduled": "Not Scheduled",
         "run_now": "Run Now",
@@ -148,9 +149,14 @@ const resources = {
         "custom": "Custom (hrs)",
         "logic_title": "SCHEDULER LOGIC",
         "logic_1": "Main Pipeline handles fetching from sources, auto-tagging, and storage purging.",
-        "logic_2": "Discovery Engine iterates through your active keyword/link subscriptions.",
+        "logic_2": "Discovery tasks use individual cycles (in days) configured in the Downloads tab.",
         "logic_3": "Manual 'Run Now' triggers a background thread and does not affect the next scheduled time.",
-        "logic_4": "Changing intervals will immediately restart the scheduler with new values."
+        "logic_4": "Changing intervals will immediately restart the scheduler with new values.",
+        "upcoming_title": "Upcoming Tasks (Next 7 Days)",
+        "main_pipeline_config": "Main Pipeline Interval",
+        "type_pipeline": "Pipeline",
+        "type_discovery": "Discovery",
+        "no_upcoming": "No tasks scheduled for the next 7 days."
       }
     }
   },
@@ -217,6 +223,7 @@ const resources = {
         "download": "下载",
         "search": "搜索",
         "enable_playlist": "启用整个播放列表下载",
+        "override_duplicate": "强制下载 (忽略重复)",
         "fetch": "抓取",
         "fetch_mix": "抓取推荐歌单",
         "automated_discovery": "自动发现任务",
@@ -284,8 +291,8 @@ const resources = {
         "title": "后台任务",
         "refresh": "刷新状态",
         "loading": "正在加载计划任务信息...",
-        "pipeline_name": "主音乐工作流 (下载/标签/清理)",
-        "discovery_name": "关键字发现引擎",
+        "pipeline_name": "主音乐工作流",
+        "discovery_name": "发现任务",
         "next_run": "下次执行:",
         "not_scheduled": "未调度",
         "run_now": "立即运行",
@@ -299,9 +306,14 @@ const resources = {
         "custom": "自定义 (小时)",
         "logic_title": "调度逻辑",
         "logic_1": "主工作流处理音源下载、自动标签和存储清理。",
-        "logic_2": "发现引擎循环遍历您的关键字/订阅链接。",
+        "logic_2": "发现任务使用在“下载”标签页中为每个任务单独配置的循环周期（天）。",
         "logic_3": "手动点击“立即运行”会触发后台线程，且不会影响下一次计划执行时间。",
-        "logic_4": "更改间隔将立即使用新值重新启动调度程序。"
+        "logic_4": "更改间隔将立即使用新值重新启动调度程序。",
+        "upcoming_title": "即将执行的任务 (未来 7 天)",
+        "main_pipeline_config": "主工作流执行间隔",
+        "type_pipeline": "工作流",
+        "type_discovery": "发现任务",
+        "no_upcoming": "未来 7 天内没有计划任务。"
       }
     }
   },
@@ -368,6 +380,7 @@ const resources = {
         "download": "ダウンロード",
         "search": "検索",
         "enable_playlist": "プレイリスト全体のダウンロードを有効にする",
+        "override_duplicate": "強制ダウンロード (重複を無視)",
         "fetch": "取得",
         "fetch_mix": "Mixを取得",
         "automated_discovery": "自動検出タスク",
@@ -435,8 +448,8 @@ const resources = {
         "title": "バックグラウンドタスク",
         "refresh": "ステータスを更新",
         "loading": "スケジューラ情報を読み込み中...",
-        "pipeline_name": "メイン音楽パイプライン (取得/タグ/パージ)",
-        "discovery_name": "キーワード検出エンジン",
+        "pipeline_name": "メイン音楽パイプライン",
+        "discovery_name": "自動検出",
         "next_run": "次回の実行:",
         "not_scheduled": "スケジュールされていません",
         "run_now": "今すぐ実行",
@@ -450,9 +463,14 @@ const resources = {
         "custom": "カスタム (時間)",
         "logic_title": "スケジューラ ロジック",
         "logic_1": "メインパイプラインは、ソースからの取得、自動タグ付け、ストレージのパージを処理します。",
-        "logic_2": "検出エンジンは、アクティブなキーワード/リンクのサブスクリプションを反復処理します。",
+        "logic_2": "検出タスクは、ダウンロードタブで設定された個別のサイクル（日数）を使用します。",
         "logic_3": "手動の「今すぐ実行」はバックグラウンドスレッドをトリガーし、次回のスケジュールされた時間には影響しません。",
-        "logic_4": "間隔を変更すると、新しい値でスケジューラがすぐに再起動します。"
+        "logic_4": "間隔を変更すると、新しい値でスケジューラがすぐに再起動します。",
+        "upcoming_title": "今後のタスク (今後7日間)",
+        "main_pipeline_config": "メインパイプラインの間隔",
+        "type_pipeline": "パイプライン",
+        "type_discovery": "自動検出",
+        "no_upcoming": "今後7日間にスケジュールされたタスクはありません。"
       }
     }
   }

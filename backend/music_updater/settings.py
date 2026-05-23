@@ -93,7 +93,6 @@ MUSIC_CONFIG = {
     "NAVIDROME_USER": os.environ.get("NAVIDROME_USER", "admin"),
     "NAVIDROME_PASSWORD": os.environ.get("NAVIDROME_PASSWORD", "changeme"),
     "DAEMON_INTERVAL_HOURS": int(os.environ.get("DAEMON_INTERVAL_HOURS", "24")),
-    "DISCOVERY_INTERVAL_HOURS": int(os.environ.get("DISCOVERY_INTERVAL_HOURS", "24")),
     "YTDLP_COOKIES": os.environ.get("YTDLP_COOKIES", ""),
     "YTDLP_USERNAME": os.environ.get("YTDLP_USERNAME", ""),
     "YTDLP_PASSWORD": os.environ.get("YTDLP_PASSWORD", ""),

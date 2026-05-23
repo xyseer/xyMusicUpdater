@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api';
-import { Play, Clock, Settings, RefreshCw } from 'lucide-react';
+import { Play, Clock, Settings, RefreshCw, Calendar, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const jobCardStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: 16, borderRadius: 6, border: '1px solid var(--border)' };
-const iconBoxStyle = { width: 40, height: 40, background: 'rgba(155,81,224,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const jobCardStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: 16, borderRadius: 6, border: '1px solid var(--border)', marginBottom: 12 };
+const iconBoxStyle = { width: 32, height: 32, background: 'rgba(155,81,224,0.1)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const triggerBtnStyle = { display: 'flex', alignItems: 'center', padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 13 };
 const refreshBtnStyle = { background: 'transparent', border: '1px solid #444', color: '#888', borderRadius: 4, padding: '4px 10px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center' };
 const selectStyle = { background: 'transparent', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', outline: 'none', padding: '4px 0' };
@@ -12,25 +12,19 @@ const infoBoxStyle = { background: 'rgba(155,81,224,0.05)', border: '1px solid v
 
 export const SchedulerPanel = ({ config, onUpdate, notify }) => {
   const { t } = useTranslation();
-  const [jobs, setJobs] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isTriggering, setIsTriggering] = useState(null);
-  const [customJobs, setCustomJobs] = useState({}); // { jobId: boolean }
+  const [customMode, setCustomMode] = useState(false);
 
   const fetchInfo = async () => {
     setLoading(true);
     try {
       const data = await api.getSchedulerInfo();
-      setJobs(data);
+      setEvents(data);
       
-      // Auto-detect custom values not in presets
       const presets = ["1", "2", "6", "12", "24", "48"];
-      const newCustoms = {};
-      data.forEach(j => {
-        const val = String(j.id === 'music_pipeline' ? config.DAEMON_INTERVAL_HOURS : config.DISCOVERY_INTERVAL_HOURS);
-        if (!presets.includes(val)) newCustoms[j.id] = true;
-      });
-      setCustomJobs(prev => ({ ...prev, ...newCustoms }));
+      if (!presets.includes(String(config.DAEMON_INTERVAL_HOURS))) setCustomMode(true);
     } catch (e) {
       console.error(e);
     } finally {
@@ -40,16 +34,16 @@ export const SchedulerPanel = ({ config, onUpdate, notify }) => {
 
   useEffect(() => {
     fetchInfo();
-    const inv = setInterval(fetchInfo, 30000);
+    const inv = setInterval(fetchInfo, 60000);
     return () => clearInterval(inv);
-  }, []);
+  }, [config.DAEMON_INTERVAL_HOURS]);
 
   const handleTrigger = async (taskId) => {
     setIsTriggering(taskId);
     try {
       await api.triggerSchedulerTask(taskId);
       notify("Task triggered successfully!");
-      fetchInfo();
+      setTimeout(fetchInfo, 1000);
     } catch (e) {
       notify("Trigger failed: " + e.message, "error");
     } finally {
@@ -57,12 +51,11 @@ export const SchedulerPanel = ({ config, onUpdate, notify }) => {
     }
   };
 
-  const updateInterval = async (key, valueHours) => {
+  const updateInterval = async (val) => {
     try {
-      await api.updateConfig({ [key]: valueHours });
-      notify("Interval updated and scheduler reloaded.");
+      await api.updateConfig({ DAEMON_INTERVAL_HOURS: val });
+      notify("Main pipeline interval updated.");
       onUpdate();
-      fetchInfo();
     } catch (e) {
       notify("Update failed: " + e.message, "error");
     }
@@ -70,83 +63,87 @@ export const SchedulerPanel = ({ config, onUpdate, notify }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 1. Main Pipeline Configuration */}
       <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0 }}>{t('scheduler.title')}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+             <Settings size={18} color="var(--accent)" />
+             <h3 style={{ margin: 0 }}>{t('scheduler.main_pipeline_config')}</h3>
+          </div>
           <button onClick={fetchInfo} style={refreshBtnStyle}>
             <RefreshCw size={14} style={{ marginRight: 6 }} /> {t('scheduler.refresh')}
           </button>
         </div>
 
-        {loading && jobs.length === 0 ? <div>{t('scheduler.loading')}</div> : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {jobs.map(job => {
-              const currentVal = job.id === 'music_pipeline' ? config.DAEMON_INTERVAL_HOURS : config.DISCOVERY_INTERVAL_HOURS;
-              const isCustom = customJobs[job.id];
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#0a0a0c', borderRadius: 4, padding: '8px 12px', border: '1px solid var(--border)', flex: 1 }}>
+            <Clock size={14} style={{ marginRight: 10, color: 'var(--text-dim)' }} />
+            {customMode ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <input 
+                  type="number" 
+                  defaultValue={config.DAEMON_INTERVAL_HOURS}
+                  onBlur={(e) => updateInterval(e.target.value)}
+                  style={{ ...selectStyle, flex: 1, borderBottom: '1px solid var(--accent)' }}
+                />
+                <span style={{ fontSize: 12 }}>hrs</span>
+                <button onClick={() => setCustomMode(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>X</button>
+              </div>
+            ) : (
+              <select 
+                value={config.DAEMON_INTERVAL_HOURS}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') setCustomMode(true);
+                  else updateInterval(e.target.value);
+                }}
+                style={{ ...selectStyle, flex: 1 }}
+              >
+                <option value="1">{t('discovery.every')} 1 hr</option>
+                <option value="2">{t('discovery.every')} 2 hrs</option>
+                <option value="6">{t('discovery.every')} 6 hrs</option>
+                <option value="12">{t('discovery.every')} 12 hrs</option>
+                <option value="24">{t('discovery.every')} 24 hrs</option>
+                <option value="48">{t('discovery.every')} 48 hrs</option>
+                <option value="custom">{t('scheduler.custom')}</option>
+              </select>
+            )}
+          </div>
+          <button onClick={() => handleTrigger('music_pipeline')} disabled={isTriggering === 'music_pipeline'} style={triggerBtnStyle}>
+            <Play size={14} style={{ marginRight: 8 }} /> {t('scheduler.run_now')}
+          </button>
+        </div>
+      </div>
 
-              return (
-                <div key={job.id} style={jobCardStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={iconBoxStyle}>
-                      <Clock size={20} color="var(--accent)" />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 16 }}>{job.id === 'music_pipeline' ? t('scheduler.pipeline_name') : t('scheduler.discovery_name')}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
-                        {t('scheduler.next_run')} <span style={{ color: '#fff', fontWeight: 600 }}>{job.next_run ? new Date(job.next_run).toLocaleString() : t('scheduler.not_scheduled')}</span>
-                      </div>
-                    </div>
+      {/* 2. Timeline of Upcoming Tasks */}
+      <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+           <Calendar size={18} color="var(--accent)" />
+           <h3 style={{ margin: 0 }}>{t('scheduler.upcoming_title')}</h3>
+        </div>
+
+        {loading && events.length === 0 ? <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>{t('scheduler.loading')}</div> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {events.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>{t('scheduler.no_upcoming')}</div>}
+            {events.map((ev, i) => (
+              <div key={i} style={jobCardStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ ...iconBoxStyle, background: ev.type === 'pipeline' ? 'rgba(76,175,80,0.1)' : 'rgba(155,81,224,0.1)' }}>
+                    {ev.type === 'pipeline' ? <RefreshCw size={16} color="var(--green)" /> : <Search size={16} color="var(--accent)" />}
                   </div>
-
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#0a0a0c', borderRadius: 4, padding: '2px 8px' }}>
-                      <Settings size={12} style={{ marginRight: 6, color: 'var(--text-dim)' }} />
-                      
-                      {isCustom ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <input 
-                            type="number" 
-                            defaultValue={currentVal}
-                            onBlur={(e) => updateInterval(job.id === 'music_pipeline' ? 'DAEMON_INTERVAL_HOURS' : 'DISCOVERY_INTERVAL_HOURS', e.target.value)}
-                            style={{ ...selectStyle, width: 40, borderBottom: '1px solid var(--accent)' }}
-                          />
-                          <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>hrs</span>
-                          <button onClick={() => setCustomJobs({...customJobs, [job.id]: false})} style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 10, padding: '0 4px' }}>X</button>
-                        </div>
-                      ) : (
-                        <select 
-                          value={currentVal}
-                          onChange={(e) => {
-                            if (e.target.value === 'custom') {
-                              setCustomJobs({ ...customJobs, [job.id]: true });
-                            } else {
-                              updateInterval(job.id === 'music_pipeline' ? 'DAEMON_INTERVAL_HOURS' : 'DISCOVERY_INTERVAL_HOURS', e.target.value);
-                            }
-                          }}
-                          style={selectStyle}
-                        >
-                          <option value="1">{t('discovery.every')} 1 hr</option>
-                          <option value="2">{t('discovery.every')} 2 hrs</option>
-                          <option value="6">{t('discovery.every')} 6 hrs</option>
-                          <option value="12">{t('discovery.every')} 12 hrs</option>
-                          <option value="24">{t('discovery.every')} 24 hrs</option>
-                          <option value="48">{t('discovery.every')} 48 hrs</option>
-                          <option value="custom">{t('scheduler.custom')}</option>
-                        </select>
-                      )}
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{ev.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                      {ev.type === 'pipeline' ? t('scheduler.type_pipeline') : t('scheduler.type_discovery')} • {new Date(ev.time).toLocaleString()}
                     </div>
-
-                    <button 
-                      onClick={() => handleTrigger(job.id)} 
-                      disabled={isTriggering === job.id}
-                      style={triggerBtnStyle}
-                    >
-                      <Play size={14} style={{ marginRight: 6 }} /> {t('scheduler.run_now')}
-                    </button>
                   </div>
                 </div>
-              );
-            })}
+                {ev.id.startsWith('discovery_') && (
+                   <button onClick={() => handleTrigger(ev.id)} disabled={isTriggering === ev.id} style={{ ...refreshBtnStyle, border: 'none' }}>
+                     <Play size={14} />
+                   </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

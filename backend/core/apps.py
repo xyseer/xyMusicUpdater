@@ -29,35 +29,40 @@ class CoreConfig(AppConfig):
     def start_scheduler(self):
         from apscheduler.schedulers.background import BackgroundScheduler
         from .tasks import scheduled_pipeline
-        from .music_engine import run_search_subscriptions, _cfg
+        from .music_engine import run_single_subscription, _cfg
+        from .models import SearchSubscription
         
         if self._scheduler:
-            self._scheduler.shutdown()
+            try:
+                self._scheduler.shutdown()
+            except: pass
 
         self._scheduler = BackgroundScheduler()
         cfg = _cfg()
         
         # 1. Main Pipeline (Cron)
-        # Default 24 hours
         interval_main = int(cfg.get("DAEMON_INTERVAL_HOURS", 24)) 
         self._scheduler.add_job(
             scheduled_pipeline, 
             'interval', 
             hours=interval_main, 
             id='music_pipeline',
+            name='Main Music Pipeline',
             replace_existing=True
         )
 
-        # 2. Discovery Pipeline
-        # Default 24 hours
-        interval_discovery = int(cfg.get("DISCOVERY_INTERVAL_HOURS", 24))
-        self._scheduler.add_job(
-            run_search_subscriptions,
-            'interval',
-            hours=interval_discovery,
-            id='discovery_pipeline',
-            replace_existing=True
-        )
+        # 2. Individual Search Subscriptions
+        subs = SearchSubscription.objects.filter(active=True)
+        for sub in subs:
+            self._scheduler.add_job(
+                run_single_subscription,
+                'interval',
+                days=sub.cycle_days,
+                id=f'discovery_{sub.id}',
+                name=f'Discovery: {sub.label}',
+                args=[sub.id],
+                replace_existing=True
+            )
 
         self._scheduler.start()
 

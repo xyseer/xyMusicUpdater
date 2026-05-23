@@ -92,6 +92,15 @@ export const DiscoveryPanel = ({ notify }) => {
     }
   };
 
+  const handleRunSingle = async (id) => {
+    try {
+      await api.triggerSchedulerTask(`discovery_${id}`);
+      notify("Discovery task triggered for this item.");
+    } catch (e) {
+      notify("Failed to trigger: " + e.message, "error");
+    }
+  };
+
   if (loading && subs.length === 0) return <div>Loading subscriptions...</div>;
 
   return (
@@ -161,6 +170,9 @@ export const DiscoveryPanel = ({ notify }) => {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 5 }}>
+              <button onClick={() => handleRunSingle(sub.id)} style={{ padding: 8, background: 'transparent', border: 'none', color: 'var(--green)', cursor: 'pointer' }} title={t('scheduler.run_now')}>
+                <Play size={18} />
+              </button>
               <button onClick={() => startEdit(sub)} style={{ padding: 8, background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}>
                 <Edit2 size={18} />
               </button>

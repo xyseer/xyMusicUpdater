@@ -10,7 +10,7 @@ export const api = {
   getPlaylistMap: () => instance.get('/songs/playlist-map/').then(r => r.data),
   getJobs: () => instance.get('/jobs/').then(r => r.data),
   getPermanentLog: () => instance.get('/permanent-log/').then(r => r.data),
-  manualDownload: (url, allow_playlist = false) => instance.post('/jobs/manual/', { url, allow_playlist }).then(r => r.data),
+  manualDownload: (url, allow_playlist = false, override_duplicate = false) => instance.post('/jobs/manual/', { url, allow_playlist, override_duplicate }).then(r => r.data),
   triggerCron: () => instance.post('/jobs/cron/').then(r => r.data),
   triggerRescan: () => instance.post('/rescan/').then(r => r.data),
   triggerPurge: () => instance.post('/purge/').then(r => r.data),

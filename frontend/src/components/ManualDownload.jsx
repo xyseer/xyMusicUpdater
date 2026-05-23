@@ -7,6 +7,7 @@ export const ManualDownload = ({ onJobStarted }) => {
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState('');
   const [allowPlaylist, setAllowPlaylist] = useState(false);
+  const [overrideDuplicate, setOverrideDuplicate] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -16,7 +17,7 @@ export const ManualDownload = ({ onJobStarted }) => {
     
     if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
       // Direct Download
-      await api.manualDownload(inputVal, allowPlaylist);
+      await api.manualDownload(inputVal, allowPlaylist, overrideDuplicate);
       setInputVal('');
       setSearchResults([]);
       onJobStarted();
@@ -36,7 +37,7 @@ export const ManualDownload = ({ onJobStarted }) => {
   };
 
   const triggerDownload = async (targetUrl, forcePlaylist = false) => {
-    await api.manualDownload(targetUrl, forcePlaylist || allowPlaylist);
+    await api.manualDownload(targetUrl, forcePlaylist || allowPlaylist, overrideDuplicate);
     setInputVal('');
     setSearchResults([]);
     onJobStarted();
@@ -67,14 +68,24 @@ export const ManualDownload = ({ onJobStarted }) => {
             {isSearching ? '...' : (isUrl ? <><Download size={14}/> {t('downloads.download')}</> : <><Search size={14}/> {t('downloads.search')}</>)}
           </button>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
-          <input 
-            type="checkbox" 
-            checked={allowPlaylist} 
-            onChange={(e) => setAllowPlaylist(e.target.checked)} 
-          />
-          {t('downloads.enable_playlist')}
-        </label>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={allowPlaylist} 
+              onChange={(e) => setAllowPlaylist(e.target.checked)} 
+            />
+            {t('downloads.enable_playlist')}
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={overrideDuplicate} 
+              onChange={(e) => setOverrideDuplicate(e.target.checked)} 
+            />
+            {t('downloads.override_duplicate')}
+          </label>
+        </div>
       </form>
 
       {searchResults.length > 0 && (

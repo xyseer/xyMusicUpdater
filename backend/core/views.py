@@ -151,25 +151,34 @@ def auto_tag_all_view(request):
 
 @api_view(["GET", "POST", "PATCH", "DELETE"])
 def subscriptions_view(request, pk=None):
+    from django.apps import apps
+    core_config = apps.get_app_config("core")
+    
     if request.method == "GET":
         subs = SearchSubscription.objects.all().order_by("-created_at")
         return Response(SearchSubscriptionSerializer(subs, many=True).data)
     if request.method == "POST":
         serializer = SearchSubscriptionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(); return Response(serializer.data, status=201)
+            serializer.save()
+            core_config.reload_scheduler()
+            return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     if request.method == "PATCH" and pk:
         try:
             sub = SearchSubscription.objects.get(pk=pk)
             serializer = SearchSubscriptionSerializer(sub, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save(); return Response(serializer.data)
+                serializer.save()
+                core_config.reload_scheduler()
+                return Response(serializer.data)
             return Response(serializer.errors, status=400)
         except SearchSubscription.DoesNotExist:
             return Response({"error": "Not found"}, status=404)
     if request.method == "DELETE" and pk:
-        SearchSubscription.objects.filter(pk=pk).delete(); return Response(status=204)
+        SearchSubscription.objects.filter(pk=pk).delete()
+        core_config.reload_scheduler()
+        return Response(status=204)
     return Response({"error": "Method not allowed"}, status=405)
 
 @api_view(["POST"])
@@ -215,9 +224,10 @@ def job_detail(request, pk):
 def manual_download(request):
     url = request.data.get("url")
     allow_playlist = request.data.get("allow_playlist", False)
+    override_duplicate = request.data.get("override_duplicate", False)
     if not url: return Response({"error": "URL required"}, status=400)
     job = DownloadJob.objects.create(job_type="manual", status="queued", created_at=dj_tz.now())
-    threading.Thread(target=_run_manual_job, args=(job.id, url, allow_playlist), daemon=True).start()
+    threading.Thread(target=_run_manual_job, args=(job.id, url, allow_playlist, override_duplicate), daemon=True).start()
     return Response(DownloadJobSerializer(job).data, status=201)
 
 @api_view(["GET"])
@@ -231,12 +241,12 @@ def search_media_view(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-def _run_manual_job(job_id, url, allow_playlist):
+def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False):
     from .music_engine import download_url, register_songs, navidrome_rescan
     try:
         job = DownloadJob.objects.get(pk=job_id)
         job.status = "running"; job.started_at = dj_tz.now(); job.save()
-        files = download_url(url, job=job, allow_playlist=allow_playlist)
+        files = download_url(url, job=job, allow_playlist=allow_playlist, override_duplicate=override_duplicate)
         if files:
             register_songs(files, source="manual", job=job)
             navidrome_rescan(job=job)
@@ -291,7 +301,6 @@ ALLOWED_CONFIG_KEYS = [
     "MAX_SONGS_PER_SOURCE",
     "MAX_STORAGE_SIZE",
     "DAEMON_INTERVAL_HOURS",
-    "DISCOVERY_INTERVAL_HOURS",
     "NAVIDROME_USER",
     "NAVIDROME_PASSWORD",
     "YTDLP_COOKIES",
@@ -348,17 +357,29 @@ def search_musicbrainz_view(request):
 @api_view(["GET"])
 def scheduler_info_view(request):
     from django.apps import apps
+    from datetime import timedelta
     scheduler = getattr(apps.get_app_config("core"), "_scheduler", None)
-    jobs_info = []
+    events = []
     if scheduler:
+        now = dj_tz.now()
+        horizon = now + timedelta(days=7)
         for job in scheduler.get_jobs():
-            jobs_info.append({
-                "id": job.id,
-                "name": job.name,
-                "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
-                "trigger": str(job.trigger)
-            })
-    return Response(jobs_info)
+            # Estimate future runs for interval triggers
+            next_run = job.next_run_time
+            while next_run and next_run < horizon:
+                events.append({
+                    "id": job.id,
+                    "name": job.name,
+                    "time": next_run.isoformat(),
+                    "type": "pipeline" if job.id == "music_pipeline" else "discovery"
+                })
+                # For interval jobs, we can approximate the next one
+                if hasattr(job.trigger, 'interval'):
+                    next_run += job.trigger.interval
+                else:
+                    break # Only show one for non-interval or if we can't determine
+        events.sort(key=lambda x: x["time"])
+    return Response(events)
 
 @api_view(["POST"])
 def trigger_task_view(request):
@@ -376,12 +397,29 @@ def trigger_task_view(request):
         try: run_search_subscriptions(force=True)
         finally: connection.close()
 
+    def _run_single_discovery(sid):
+        from .music_engine import run_single_subscription, navidrome_rescan, purge_oldest_songs
+        try:
+            added = run_single_subscription(sid)
+            if added and added > 0:
+                navidrome_rescan()
+                purge_oldest_songs()
+        finally: connection.close()
+
     if task_id == "music_pipeline":
         threading.Thread(target=_run_pipeline, daemon=True).start()
         return Response({"status": "triggered", "task": "Music Pipeline"})
     elif task_id == "discovery_pipeline":
         threading.Thread(target=_run_discovery, daemon=True).start()
         return Response({"status": "triggered", "task": "Discovery Pipeline"})
+    elif task_id and task_id.startswith("discovery_"):
+        try:
+            sub_id = int(task_id.split("_")[1])
+            threading.Thread(target=_run_single_discovery, args=(sub_id,), daemon=True).start()
+            return Response({"status": "triggered", "task": f"Discovery {sub_id}"})
+        except (ValueError, IndexError):
+            return Response({"error": "Invalid discovery ID"}, status=400)
+    
     return Response({"error": "Unknown task"}, status=400)
 
 # ── SSE stream ─────────────────────────────────────────────────────────────
