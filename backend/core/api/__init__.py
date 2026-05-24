@@ -13,3 +13,4 @@ from .navidrome_views import (
     rescan_view, purge_view, upcoming_purges_view,
     playlists_view, permanent_log_view
 )
+from .editor_views import stream_song_view, trim_song_view, confirm_trim_view, cleanup_previews_view

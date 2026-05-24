@@ -38,6 +38,10 @@ urlpatterns = [
     path('api/compilation/candidates/', views.compilation_candidates_view),
     path('api/compilation/merge/', views.merge_compilation_view),
     path('api/nd-cover/<str:nd_id>/', views.nd_song_cover_view),
+    path('api/songs/<int:pk>/stream/', views.stream_song_view),
+    path('api/songs/<int:pk>/trim/', views.trim_song_view),
+    path('api/songs/<int:pk>/trim/confirm/', views.confirm_trim_view),
+    path('api/editor/cleanup-previews/', views.cleanup_previews_view),
     path('api/events/', views.sse_stream),
 ]
 

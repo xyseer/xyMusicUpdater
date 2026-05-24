@@ -14,7 +14,22 @@ const resources = {
         "scheduler": "Scheduler",
         "purge_analysis": "Purge Analysis",
         "compilation_merge": "Compilation Merge",
+        "music_editor": "Music Editor",
         "settings": "Settings"
+      },
+      "editor": {
+        "title": "Music Editor",
+        "desc": "Trim your audio tracks surgically. Set start and end times to keep only the part you want.",
+        "select_song": "Select a song to edit",
+        "start_time": "Start Time (s)",
+        "end_time": "End Time (s)",
+        "preview": "Preview Trimmed Version",
+        "apply_trim": "Generate Preview",
+        "confirm_replace": "Confirm & Replace Original",
+        "discard_preview": "Discard Preview",
+        "trimming": "Generating preview...",
+        "success": "Song trimmed successfully!",
+        "error": "Failed to trim song."
       },
       "compilation": {
         "title": "Compilation Album Merge",
@@ -182,7 +197,22 @@ const resources = {
         "scheduler": "计划任务",
         "purge_analysis": "清理分析",
         "compilation_merge": "合集整理",
+        "music_editor": "音乐剪辑",
         "settings": "设置"
+      },
+      "editor": {
+        "title": "音乐剪辑器",
+        "desc": "精确裁剪你的音轨。设置开始和结束时间，仅保留你想要的部分。",
+        "select_song": "选择要编辑的歌曲",
+        "start_time": "开始时间 (秒)",
+        "end_time": "结束时间 (秒)",
+        "preview": "预览裁剪后的版本",
+        "apply_trim": "生成预览",
+        "confirm_replace": "确认并替换原文件",
+        "discard_preview": "放弃预览",
+        "trimming": "正在生成预览...",
+        "success": "歌曲裁剪成功！",
+        "error": "裁剪失败。"
       },
       "compilation": {
         "title": "合集专辑整理",
@@ -350,7 +380,22 @@ const resources = {
         "scheduler": "スケジューラ",
         "purge_analysis": "パージ分析",
         "compilation_merge": "コンピ整理",
+        "music_editor": "音楽編集",
         "settings": "設定"
+      },
+      "editor": {
+        "title": "ミュージックエディタ",
+        "desc": "オーディオトラックを外科的にトリミングします。開始時間と終了時間を設定して、必要な部分だけを残します。",
+        "select_song": "編集する曲を選択してください",
+        "start_time": "開始時間 (秒)",
+        "end_time": "終了時間 (秒)",
+        "preview": "トリミング後のプレビュー",
+        "apply_trim": "プレビューを生成",
+        "confirm_replace": "確定して元のファイルを置換",
+        "discard_preview": "プレビューを破棄",
+        "trimming": "プレビューを生成中...",
+        "success": "曲のトリミングに成功しました！",
+        "error": "曲のトリミングに失敗しました。"
       },
       "compilation": {
         "title": "コンピレーションアルバム整理",

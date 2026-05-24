@@ -5,3 +5,4 @@ from .storage import get_storage_info, storage_is_full, purge_oldest_songs, get_
 from .tagger import _read_basic_tags, search_musicbrainz_api, apply_manual_tags, revert_song_to_original, apply_manual_tags_to_file, auto_tag_all_untagged, confirm_pending_tags, reject_pending_tags, get_compilation_candidates, merge_compilation
 from .discovery import run_single_subscription, run_search_subscriptions
 from .pipeline import fetch_all_sources, register_songs, run_pipeline, retry_interrupted_jobs
+from .editor import generate_trim_preview, finalize_trim, cleanup_previews
