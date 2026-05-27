@@ -19,12 +19,69 @@
         --font-ui: "Inter", system-ui, sans-serif;
         --font-mono: "JetBrains Mono", monospace;
       }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--text);
         font-family: var(--font-ui);
+        -webkit-font-smoothing: antialiased;
       }
+
+      /* Global Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes scaleIn {
+        from { transform: scale(0.98); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.02); }
+        70% { transform: scale(0.98); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes slideIn {
+        from { transform: translateX(-20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+      .animate-scale { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+      .animate-bounce { animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+      .animate-slide { animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+      .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      }
+
+      button, .nav-btn {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      button:hover { transform: translateY(-1px); }
+      button:active { transform: translateY(1px) scale(0.98); }
+      
+      .spin { animation: spin 1s linear infinite; }
+      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #444; }
     </style>
   </head>
   <body>

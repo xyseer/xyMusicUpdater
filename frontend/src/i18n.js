@@ -7,6 +7,8 @@ const resources = {
     translation: {
       "app": {
         "title": "MusicUpdater",
+        "login_failed": "Login failed. Check your credentials.",
+        "wrong_credentials": "Wrong username or password",
         "library": "Library",
         "manual_tagging": "Manual Tagging",
         "downloads": "Downloads",
@@ -52,6 +54,8 @@ const resources = {
         "save_settings": "Save Settings",
         "saving": "Saving...",
         "cleanup_history": "Cleanup History",
+        "show_dashboard_bg": "Show Dashboard Background",
+        "theme_color": "Theme Color (HEX)",
         "max_storage_size": "Max Storage Size (GB)",
         "hold_period": "Hold Period (Days)",
         "max_deletions": "Max Deletions per Purge",
@@ -190,6 +194,8 @@ const resources = {
     translation: {
       "app": {
         "title": "MusicUpdater",
+        "login_failed": "登录失败，请检查你的凭证。",
+        "wrong_credentials": "用户名或密码错误",
         "library": "曲库",
         "manual_tagging": "手动标签",
         "downloads": "下载与搜索",
@@ -235,6 +241,8 @@ const resources = {
         "save_settings": "保存设置",
         "saving": "保存中...",
         "cleanup_history": "清理历史记录",
+        "show_dashboard_bg": "显示控制面板背景",
+        "theme_color": "主题颜色 (HEX)",
         "max_storage_size": "最大存储空间 (GB)",
         "hold_period": "保留天数 (Days)",
         "max_deletions": "每次清理最大删除数",
@@ -373,7 +381,10 @@ const resources = {
     translation: {
       "app": {
         "title": "MusicUpdater",
-        "library": "ライブラリ",
+        "login_failed": "ログインに失敗しました。資格情報を確認してください。",
+        "wrong_credentials": "ユーザー名またはパスワードが正しくありません",
+        "library": "曲ライブラリ",
+
         "manual_tagging": "手動タグ付け",
         "downloads": "ダウンロード",
         "job_history": "ジョブ履歴",
@@ -418,7 +429,9 @@ const resources = {
         "save_settings": "設定を保存",
         "saving": "保存中...",
         "cleanup_history": "履歴をクリーンアップ",
-        "max_storage_size": "最大ストレージ容量 (GB)",
+        "show_dashboard_bg": "ダッシュボードの背景を表示",
+        "theme_color": "テーマカラー (HEX)",
+        "max_storage_size": "最大ストレージサイズ (GB)",
         "hold_period": "保持期間 (日数)",
         "max_deletions": "1回あたりの最大削除数",
         "max_songs": "ソース/プレイリストあたりの最大曲数",
