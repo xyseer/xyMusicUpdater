@@ -3,7 +3,8 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key')
+import secrets
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', secrets.token_urlsafe(50))
 
 DEBUG = True
 
@@ -57,7 +58,7 @@ WSGI_APPLICATION = 'music_updater.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DB_PATH', BASE_DIR / 'db.sqlite3'),
+        'NAME': os.environ.get('DB_PATH', '/app/data/db.sqlite3'),
     }
 }
 
@@ -75,6 +76,16 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}
 
 # Music Config
 MUSIC_CONFIG = {
@@ -97,4 +108,6 @@ MUSIC_CONFIG = {
     "YTDLP_USERNAME": os.environ.get("YTDLP_USERNAME", ""),
     "YTDLP_PASSWORD": os.environ.get("YTDLP_PASSWORD", ""),
     "YTDLP_PROXY": os.environ.get("YTDLP_PROXY", ""),
+    "UI_DASHBOARD_BG": os.environ.get("UI_DASHBOARD_BG", "true"),
+    "UI_THEME_COLOR": os.environ.get("UI_THEME_COLOR", "#9b51e0"),
 }

@@ -15,3 +15,4 @@ types-requests
 types-setuptools
 django-stubs
 djangorestframework-stubs
+pycryptodome

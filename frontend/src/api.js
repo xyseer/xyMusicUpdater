@@ -2,9 +2,50 @@ import axios from 'axios';
 
 const instance = axios.create({
   baseURL: '/api',
+  withCredentials: true,
+  timeout: 5000
 });
 
+// Helper to grab CSRF token from cookies
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+      }
+  }
+  return cookieValue;
+}
+
+instance.interceptors.request.use(config => {
+  const csrfToken = getCookie('csrftoken');
+  if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+  }
+  return config;
+});
+
+
+instance.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      // Trigger a global event for App.jsx to handle
+      window.dispatchEvent(new CustomEvent('api-unauthorized'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const api = {
+  login: (username, password) => instance.post('/auth/login/', { username, password }).then(r => r.data),
+  logout: () => instance.post('/auth/logout/').then(r => r.data),
+  getSession: () => instance.get('/auth/session/').then(r => r.data),
   getStatus: () => instance.get('/status/').then(r => r.data),
   getSongs: () => instance.get('/songs/').then(r => r.data),
   getPlaylistMap: () => instance.get('/songs/playlist-map/').then(r => r.data),
@@ -17,6 +58,13 @@ export const api = {
   getPlaylists: () => instance.get('/playlists/').then(r => r.data),
   getConfig: () => instance.get('/config/').then(r => r.data),
   updateConfig: (data) => instance.post('/config/update/', data).then(r => r.data),
+  uploadBackground: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return instance.post('/config/background/upload/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(r => r.data);
+  },
   getSubscriptions: () => instance.get('/subscriptions/').then(r => r.data),
   addSubscription: (data) => instance.post('/subscriptions/', data).then(r => r.data),
   updateSubscription: (id, data) => instance.patch(`/subscriptions/${id}/`, data).then(r => r.data),
