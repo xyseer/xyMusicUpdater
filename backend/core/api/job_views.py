@@ -1,3 +1,4 @@
+from .decorators import api_auth_required
 import threading
 from django.db import connection
 from django.utils import timezone as dj_tz
@@ -7,11 +8,13 @@ from ..models import DownloadJob
 from ..serializers import DownloadJobSerializer
 from ..logic import search_media, download_url, register_songs, navidrome_rescan
 
+@api_auth_required
 @api_view(["GET"])
 def jobs_list(request):
     jobs = DownloadJob.objects.all().order_by("-created_at")[:50]
     return Response(DownloadJobSerializer(jobs, many=True).data)
 
+@api_auth_required
 @api_view(["GET"])
 def job_detail(request, pk):
     try:
@@ -20,6 +23,7 @@ def job_detail(request, pk):
     except DownloadJob.DoesNotExist:
         return Response({"error": "Not found"}, status=404)
 
+@api_auth_required
 @api_view(["POST"])
 def manual_download(request):
     url = request.data.get("url")
@@ -31,6 +35,7 @@ def manual_download(request):
     threading.Thread(target=_run_manual_job, args=(job.id, url, allow_playlist, override_duplicate), daemon=True).start()
     return Response(DownloadJobSerializer(job).data, status=201)
 
+@api_auth_required
 @api_view(["GET"])
 def search_media_view(request):
     q = request.query_params.get("q")

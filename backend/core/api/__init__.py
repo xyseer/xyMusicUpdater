@@ -7,10 +7,11 @@ from .song_views import (
 )
 from .job_views import jobs_list, job_detail, manual_download, search_media_view
 from .scheduler_views import scheduler_info_view, trigger_task_view, trigger_cron
-from .config_views import get_config_view, update_config_view
+from .config_views import get_config_view, update_config_view, upload_background_view, get_background_view
 from .discovery_views import subscriptions_view, run_subscriptions_view
 from .navidrome_views import (
     rescan_view, purge_view, upcoming_purges_view,
     playlists_view, permanent_log_view
 )
 from .editor_views import stream_song_view, trim_song_view, confirm_trim_view, cleanup_previews_view
+from .auth_views import login_view, logout_view, session_view

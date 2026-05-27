@@ -29,6 +29,8 @@ urlpatterns = [
     path('api/purge/upcoming/', views.upcoming_purges_view),
     path('api/config/', views.get_config_view),
     path('api/config/update/', views.update_config_view),
+    path('api/config/background/', views.get_background_view),
+    path('api/config/background/upload/', views.upload_background_view),
     path('api/musicbrainz/search/', views.search_musicbrainz_view),
     path('api/playlists/', views.playlists_view),
     path('api/subscriptions/', views.subscriptions_view),
@@ -42,6 +44,9 @@ urlpatterns = [
     path('api/songs/<int:pk>/trim/', views.trim_song_view),
     path('api/songs/<int:pk>/trim/confirm/', views.confirm_trim_view),
     path('api/editor/cleanup-previews/', views.cleanup_previews_view),
+    path('api/auth/login/', views.login_view),
+    path('api/auth/logout/', views.logout_view),
+    path('api/auth/session/', views.session_view),
     path('api/events/', views.sse_stream),
 ]
 

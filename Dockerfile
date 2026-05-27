@@ -36,8 +36,8 @@ COPY backend/ .
 RUN mkdir -p /app/static
 COPY --from=frontend-builder /frontend/dist /app/static
 
-# Create music dirs
-RUN mkdir -p /music/temp /music/permanent
+# Create music and data dirs
+RUN mkdir -p /music/temp /music/permanent /app/data
 
 # Collect static
 RUN python manage.py collectstatic --noinput

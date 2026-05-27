@@ -1,8 +1,13 @@
+from .decorators import api_auth_required
 from django.apps import apps
-from rest_framework.decorators import api_view
+from django.http import FileResponse, HttpResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from pathlib import Path
+import os
 from ..models import SystemConfig
-from ..logic import _cfg
+from ..logic import _cfg, _get_safe_cfg
 
 ALLOWED_CONFIG_KEYS = [
     "HOLD_PERIOD_DAYS", 
@@ -17,21 +22,19 @@ ALLOWED_CONFIG_KEYS = [
     "YTDLP_COOKIES",
     "YTDLP_USERNAME",
     "YTDLP_PASSWORD",
-    "YTDLP_PROXY"
+    "YTDLP_PROXY",
+    "UI_DASHBOARD_BG",
+    "UI_THEME_COLOR"
 ]
 
+@api_auth_required
 @api_view(["GET"])
 def get_config_view(request):
-    cfg = _cfg()
+    cfg = _get_safe_cfg()
     filtered_cfg = {k: v for k, v in cfg.items() if k in ALLOWED_CONFIG_KEYS}
-    if "NAVIDROME_PASSWORD" in filtered_cfg and filtered_cfg["NAVIDROME_PASSWORD"]:
-        filtered_cfg["NAVIDROME_PASSWORD"] = "********"
-    if "YTDLP_COOKIES" in filtered_cfg and filtered_cfg["YTDLP_COOKIES"]:
-        filtered_cfg["YTDLP_COOKIES"] = "********"
-    if "YTDLP_PASSWORD" in filtered_cfg and filtered_cfg["YTDLP_PASSWORD"]:
-        filtered_cfg["YTDLP_PASSWORD"] = "********"
     return Response(filtered_cfg)
 
+@api_auth_required
 @api_view(["POST"])
 def update_config_view(request):
     for key, value in request.data.items():
@@ -45,12 +48,35 @@ def update_config_view(request):
     except Exception:
         pass
 
-    cfg = _cfg()
+    cfg = _get_safe_cfg()
     filtered_cfg = {k: v for k, v in cfg.items() if k in ALLOWED_CONFIG_KEYS}
-    if "NAVIDROME_PASSWORD" in filtered_cfg and filtered_cfg["NAVIDROME_PASSWORD"]:
-        filtered_cfg["NAVIDROME_PASSWORD"] = "********"
-    if "YTDLP_COOKIES" in filtered_cfg and filtered_cfg["YTDLP_COOKIES"]:
-        filtered_cfg["YTDLP_COOKIES"] = "********"
-    if "YTDLP_PASSWORD" in filtered_cfg and filtered_cfg["YTDLP_PASSWORD"]:
-        filtered_cfg["YTDLP_PASSWORD"] = "********"
     return Response(filtered_cfg)
+
+@api_auth_required
+@api_view(["POST"])
+def upload_background_view(request):
+    if 'file' not in request.FILES:
+        return Response({"error": "No file uploaded"}, status=400)
+    
+    file_obj = request.FILES['file']
+    os.makedirs('/app/data', exist_ok=True)
+    
+    with open('/app/data/custom_bg', 'wb+') as f:
+        for chunk in file_obj.chunks():
+            f.write(chunk)
+            
+    return Response({"status": "ok"})
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_background_view(request):
+    path = Path('/app/data/custom_bg')
+    if path.exists():
+        return FileResponse(open(path, 'rb'))
+    
+    # Return a default SVG if no custom background exists
+    default_svg = """<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#0a0a0c"/>
+      <path d="M0 0l200 200M200 0L0 200" stroke="#1c1c21" stroke-width="1" opacity="0.5"/>
+    </svg>"""
+    return HttpResponse(default_svg, content_type="image/svg+xml")

@@ -1,3 +1,4 @@
+from .decorators import api_auth_required
 import threading
 from datetime import timedelta
 from django.db import connection
@@ -7,6 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..logic import run_pipeline, run_search_subscriptions, run_single_subscription, navidrome_rescan, purge_oldest_songs
 
+@api_auth_required
 @api_view(["GET"])
 def scheduler_info_view(request):
     from datetime import timedelta
@@ -31,6 +33,7 @@ def scheduler_info_view(request):
         events.sort(key=lambda x: x["time"])
     return Response(events)
 
+@api_auth_required
 @api_view(["POST"])
 def trigger_task_view(request):
     task_id = request.data.get("task_id")
@@ -72,6 +75,7 @@ def trigger_task_view(request):
     
     return Response({"error": "Unknown task"}, status=400)
 
+@api_auth_required
 @api_view(["POST"])
 def trigger_cron(request):
     threading.Thread(target=run_pipeline, daemon=True).start()

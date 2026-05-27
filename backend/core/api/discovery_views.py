@@ -1,3 +1,4 @@
+from .decorators import api_auth_required
 import threading
 from django.db import connection
 from django.apps import apps
@@ -7,6 +8,7 @@ from ..models import SearchSubscription
 from ..serializers import SearchSubscriptionSerializer
 from ..logic import run_search_subscriptions
 
+@api_auth_required
 @api_view(["GET", "POST", "PATCH", "DELETE"])
 def subscriptions_view(request, pk=None):
     core_config = apps.get_app_config("core")
@@ -38,6 +40,7 @@ def subscriptions_view(request, pk=None):
         return Response(status=204)
     return Response({"error": "Method not allowed"}, status=405)
 
+@api_auth_required
 @api_view(["POST"])
 def run_subscriptions_view(request):
     def _run_and_close():

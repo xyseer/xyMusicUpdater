@@ -1,9 +1,11 @@
+from .decorators import api_auth_required
 from pathlib import Path
 import os
 from typing import Optional, Tuple
 from django.http import HttpResponse
 from django.utils import timezone as dj_tz
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.response import Response
 from ..models import Song
 from ..serializers import SongSerializer
@@ -14,11 +16,13 @@ from ..logic import (
     search_musicbrainz_api, get_compilation_candidates, merge_compilation
 )
 
+@api_auth_required
 @api_view(["GET"])
 def compilation_candidates_view(request):
     candidates = get_compilation_candidates()
     return Response(candidates)
 
+@api_auth_required
 @api_view(["POST"])
 def merge_compilation_view(request):
     nd_song_ids = request.data.get("ids", [])
@@ -59,6 +63,7 @@ def _extract_cover_from_path(abs_path: Path) -> tuple[Optional[bytes], str]:
         
     return None, ""
 
+@api_auth_required
 def nd_song_cover_view(request, nd_id):
     import sqlite3
     from urllib.parse import unquote
@@ -109,6 +114,7 @@ def nd_song_cover_view(request, nd_id):
         return HttpResponse(data, content_type=mime)
     return HttpResponse(status=404)
 
+@api_auth_required
 @api_view(["GET"])
 def songs_view(request):
     status_filter = request.query_params.get("status", "active")
@@ -119,18 +125,21 @@ def songs_view(request):
         qs = qs.filter(status=status_filter)
     return Response(SongSerializer(qs, many=True).data)
 
+@api_auth_required
 @api_view(["POST"])
 def confirm_tags_view(request):
     song_ids = request.data.get("ids", [])
     count = confirm_pending_tags(song_ids=song_ids)
     return Response({"status": "ok", "confirmed": count})
 
+@api_auth_required
 @api_view(["POST"])
 def reject_tags_view(request):
     song_ids = request.data.get("ids", [])
     count = reject_pending_tags(song_ids=song_ids)
     return Response({"status": "ok", "rejected": count})
 
+@api_auth_required
 @api_view(["GET"])
 def playlist_map_view(request):
     m = _get_playlist_track_map()
@@ -138,7 +147,9 @@ def playlist_map_view(request):
     serializable_map = {k: list(v) for k, v in m.items()}
     return Response(serializable_map)
 
+@api_auth_required
 @api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def song_detail_view(request, pk):
     try:
         song = Song.objects.get(pk=pk)
@@ -166,6 +177,7 @@ def song_detail_view(request, pk):
     
     return Response(SongSerializer(song).data)
 
+@api_auth_required
 @api_view(["POST"])
 def revert_song_view(request, pk):
     try:
@@ -178,6 +190,7 @@ def revert_song_view(request, pk):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
+@api_auth_required
 def song_cover_view(request, pk):
     try:
         song = Song.objects.get(pk=pk)
@@ -190,11 +203,13 @@ def song_cover_view(request, pk):
         return HttpResponse(data, content_type=mime)
     return HttpResponse(status=404)
 
+@api_auth_required
 @api_view(["POST"])
 def auto_tag_all_view(request):
     count = auto_tag_all_untagged()
     return Response({"status": "ok", "tagged": count})
 
+@api_auth_required
 @api_view(["POST"])
 def cleanup_history_view(request):
     days = request.data.get("days")
@@ -204,6 +219,7 @@ def cleanup_history_view(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@api_auth_required
 @api_view(["GET"])
 def search_musicbrainz_view(request):
     query = request.query_params.get("q", "")

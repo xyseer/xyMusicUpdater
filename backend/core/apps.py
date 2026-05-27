@@ -14,17 +14,30 @@ class CoreConfig(AppConfig):
         if 'manage.py' in sys.argv and any(cmd in sys.argv for cmd in ['migrate', 'makemigrations', 'collectstatic', 'test', 'shell']):
             return
 
-        try:
-            from django.db import connection
-            if 'core_downloadjob' not in connection.introspection.table_names():
-                return
-        except:
-            return
-
         if os.environ.get('RUN_MAIN') == 'true' or not settings.DEBUG:
-            from .logic import retry_interrupted_jobs
-            retry_interrupted_jobs()
-            self.start_scheduler()
+            threading.Thread(target=self.deferred_startup, daemon=True).start()
+
+    def deferred_startup(self):
+        """Startup logic that needs DB access, deferred to avoid RuntimeWarning."""
+        import time
+        from django.db import connection
+        
+        # Wait a bit for DB to be ready/migrations to run if needed
+        max_retries = 10
+        for i in range(max_retries):
+            try:
+                if 'core_downloadjob' in connection.introspection.table_names():
+                    break
+            except:
+                pass
+            time.sleep(2)
+        else:
+            return # Table not found after retries
+
+        from .logic import retry_interrupted_jobs, cleanup_previews
+        retry_interrupted_jobs()
+        cleanup_previews(force_all=True) # Cleanup orphaned previews on boot
+        self.start_scheduler()
 
     def start_scheduler(self):
         from apscheduler.schedulers.background import BackgroundScheduler
