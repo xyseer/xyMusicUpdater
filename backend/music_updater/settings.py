@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # and passed via environment variable to ensure all Gunicorn workers share it.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', secrets.token_urlsafe(50))
 
-VERSION_NUMBER = "1.1.1"
+VERSION_NUMBER = "1.1.2"
 
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
@@ -123,4 +123,5 @@ MUSIC_CONFIG = {
     "UI_DASHBOARD_BG": os.environ.get("UI_DASHBOARD_BG", "true"),
     "UI_THEME_COLOR": os.environ.get("UI_THEME_COLOR", "#9b51e0"),
     "ALLOW_YTDLP": os.environ.get("ALLOW_YTDLP", "false").lower() == "true",
+    "API_TIMEOUT_SECONDS": int(os.environ.get("API_TIMEOUT_SECONDS", "15")),
 }

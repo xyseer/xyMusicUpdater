@@ -13,8 +13,10 @@ from .decorators import api_auth_required
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def status_view(request):
+    safe_config = _get_safe_cfg()
     response_data = {
-        "ekey": settings.SECRET_KEY[:16] # Public encryption key for login
+        "ekey": settings.SECRET_KEY[:16], # Public encryption key for login
+        "theme_color": safe_config.get("UI_THEME_COLOR", "#9b51e0")
     }
     
     if settings.DEBUG:

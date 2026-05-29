@@ -170,6 +170,15 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
               />
             </div>
             <div style={inputGroup}>
+              <label style={labelStyle}>{t('settings.api_timeout')}</label>
+              <input 
+                type="number" 
+                value={config.API_TIMEOUT_SECONDS || 15} 
+                onChange={e => setConfig({...config, API_TIMEOUT_SECONDS: e.target.value})}
+                style={inputStyle} 
+              />
+            </div>
+            <div style={inputGroup}>
               <label style={labelStyle}>{t('settings.monitored_playlists')}</label>
               <input 
                 value={config.MONITORED_PLAYLISTS || ''} 

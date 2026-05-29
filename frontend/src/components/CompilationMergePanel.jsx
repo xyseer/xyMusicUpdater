@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
+import { Music } from 'lucide-react';
 import defaultCover from '../assets/default-cover.svg';
 
 export const CompilationMergePanel = ({ onUpdate, notify }) => {
@@ -117,6 +118,7 @@ export const CompilationMergePanel = ({ onUpdate, notify }) => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
             {group.songs.map(song => {
               const isSelected = selectedSongs[idx]?.has(song.nd_id);
+              const tooManySongs = group.songs.length > 50;
               return (
                 <div 
                   key={song.nd_id}
@@ -134,11 +136,17 @@ export const CompilationMergePanel = ({ onUpdate, notify }) => {
                     overflow: 'hidden'
                   }}
                 >
-                  <img 
-                    src={`/api/nd-cover/${song.nd_id}/`} 
-                    style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', background: '#333', flexShrink: 0 }}
-                    onError={(e) => { e.target.src = defaultCover; }}
-                  />
+                  {tooManySongs ? (
+                    <div style={{ width: 40, height: 40, borderRadius: 4, background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Music size={18} color="var(--text-dim)" />
+                    </div>
+                  ) : (
+                    <img 
+                        src={`/api/nd-cover/${song.nd_id}/`} 
+                        style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', background: '#333', flexShrink: 0 }}
+                        onError={(e) => { e.target.src = defaultCover; }}
+                    />
+                  )}
                   <div style={{ overflow: 'hidden', flex: 1 }}>
                     <ScrollingText text={song.title} style={{ fontSize: 13, fontWeight: 600 }} />
                     <ScrollingText text={song.artist} style={{ fontSize: 11, color: isSelected ? 'var(--accent)' : 'var(--text-dim)' }} />

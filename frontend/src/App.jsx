@@ -23,7 +23,7 @@ import { MusicEditor } from './components/MusicEditor';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
-const VERSION_NUMBER = "1.1.1";
+const VERSION_NUMBER = "1.1.2";
 
 const layout = {
   container: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' },
@@ -130,6 +130,9 @@ const App = () => {
     try {
       const statusRes = await api.getStatus();
       setStatus(statusRes);
+      if (statusRes.config?.API_TIMEOUT_SECONDS) {
+          api.setTimeout(statusRes.config.API_TIMEOUT_SECONDS);
+      }
     } catch (e) { console.error('Status fetch failed', e); }
   }, [session.user]);
 

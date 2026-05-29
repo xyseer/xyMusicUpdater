@@ -24,7 +24,9 @@ ALLOWED_CONFIG_KEYS = [
     "YTDLP_PASSWORD",
     "YTDLP_PROXY",
     "UI_DASHBOARD_BG",
-    "UI_THEME_COLOR"
+    "UI_THEME_COLOR",
+    "ALLOW_YTDLP",
+    "API_TIMEOUT_SECONDS"
 ]
 
 @api_auth_required

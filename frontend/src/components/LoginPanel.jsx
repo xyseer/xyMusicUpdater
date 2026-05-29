@@ -13,11 +13,13 @@ export const LoginPanel = ({ onLogin, notify }) => {
   const [bgUrl, setBgUrl] = useState(null);
   const [ekey, setEkey] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [themeColor, setThemeColor] = useState('#9b51e0');
 
   useEffect(() => {
-    // 1. Get status for background and encryption key
+    // 1. Get status for background, encryption key, and theme color
     api.getStatus().then(status => {
         if (status.ekey) setEkey(status.ekey);
+        if (status.theme_color) setThemeColor(status.theme_color);
     }).catch(() => {});
 
     // 2. Check if custom background exists
@@ -64,6 +66,11 @@ export const LoginPanel = ({ onLogin, notify }) => {
       position: 'fixed', inset: 0, zIndex: 9999,
       backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'
     }}>
+      <style>{`
+        :root {
+            --accent: ${themeColor};
+        }
+      `}</style>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}></div>
       <div style={{ background: 'var(--surface)', padding: 40, borderRadius: 12, width: '100%', maxWidth: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.8)', zIndex: 1, border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>

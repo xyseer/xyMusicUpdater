@@ -3,7 +3,7 @@ import axios from 'axios';
 const instance = axios.create({
   baseURL: '/api',
   withCredentials: true,
-  timeout: 5000
+  timeout: 15000
 });
 
 // Helper to grab CSRF token from cookies
@@ -87,4 +87,7 @@ export const api = {
   trimSong: (id, start, end) => instance.post(`/songs/${id}/trim/`, { start, end }).then(r => r.data),
   confirmTrim: (id, preview_path) => instance.post(`/songs/${id}/trim/confirm/`, { preview_path }).then(r => r.data),
   cleanupPreviews: (preview_path) => instance.post('/editor/cleanup-previews/', { preview_path }).then(r => r.data),
+  setTimeout: (seconds) => {
+    instance.defaults.timeout = (seconds || 15) * 1000;
+  }
 };
