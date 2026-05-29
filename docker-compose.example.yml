@@ -52,11 +52,15 @@ services:
       # MAX_SONGS_PER_SOURCE: "10"            # only get 10 from playlist
 
       # yt-dlp Auth (can also be configured via UI)
-      # YTDLP_COOKIES: ""
-      # YTDLP_USERNAME: ""
-      # YTDLP_PASSWORD: ""
-      # YTDLP_PROXY: ""
-      
+      YTDLP_COOKIES: ""
+      YTDLP_USERNAME: ""
+      YTDLP_PASSWORD: ""
+      YTDLP_PROXY: ""
+
+      # Reverse Proxy & Security
+      # If deploying behind a reverse proxy (e.g., Nginx, Caddy), you MUST add your external URL(s) here.
+      CSRF_TRUSTED_ORIGINS: ""
+
       # UI Toggles
       # UI_DASHBOARD_BG: "true"
       # UI_THEME_COLOR: "#9b51e0"

@@ -81,6 +81,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Allow CSRF through reverse proxies by specifying trusted origins
+csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_origins.split(",") if url.strip()]
+else:
+    # Default fallback for local testing
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:4534", "http://127.0.0.1:4534"]
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
