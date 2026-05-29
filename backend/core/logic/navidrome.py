@@ -55,7 +55,12 @@ def _write_latest_m3u() -> None:
     from ..models import Song
     cfg = _cfg()
     m3u = Path(cfg["TEMP_FOLDER"]) / "latest.m3u"
-    latest = Song.objects.filter(status="active").order_by("-created_at")[:100]
+    
+    # We include all "active" songs. (Songs requiring manual tagging are status="active" with needs_tagging=True/pending_confirmation=True)
+    # The user wants all non-deleted files. "moved" files are in permanent storage. 
+    # So we should probably include "active" AND "moved" to be comprehensive, or just "active" if it's meant to be new stuff.
+    # The previous code only checked status="active".
+    latest = Song.objects.exclude(status="deleted").order_by("-created_at")[:100]
     try:
         m3u.write_text("#EXTM3U\n" + "\n".join([str(s.filepath) for s in latest]) + "\n", encoding="utf-8")
     except Exception as e:

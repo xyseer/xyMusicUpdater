@@ -23,6 +23,8 @@ import { MusicEditor } from './components/MusicEditor';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
+const VERSION_NUMBER = "1.1.1";
+
 const layout = {
   container: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' },
   header: { padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', zIndex: 10 },
@@ -30,7 +32,7 @@ const layout = {
   sidebar: { width: 240, borderRight: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', padding: '16px 0', zIndex: 5 },
   content: { flex: 1, overflowY: 'auto', padding: 24, background: 'var(--bg)', position: 'relative' },
   footer: { borderTop: '1px solid var(--border)', background: 'var(--surface)', zIndex: 10 },
-  logo: { width: 32, height: 32, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   navBtn: { padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', color: 'var(--text-dim)', borderLeft: '3px solid transparent', transition: 'all 0.2s', fontSize: 14, fontWeight: 500, position: 'relative' },
   navBtnActive: { color: '#fff', background: 'rgba(255,255,255,0.05)', borderLeftColor: 'var(--accent)' },
   sectionLabel: { fontSize: 11, fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: 1 },
@@ -238,15 +240,15 @@ const App = () => {
               <Activity size={24} />
             </button>
           )}
-          <div className="animate-bounce" style={layout.logo}>
-            <Music size={20} color="#fff" />
+          <div className="animate-bounce" style={{ ...layout.logo, overflow: 'hidden' }}>
+            <img src="/static/icon.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           {!isMobile && (
             <div>
               <h1 style={{ fontSize: 18, margin: 0 }}>{t('app.title')}</h1>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? 'var(--green)' : 'var(--red)', boxShadow: isLive ? '0 0 8px var(--green)' : 'none' }}></div>
-                {isLive ? 'SYSTEM LIVE' : 'SSE RECONNECTING...'}
+                {isLive ? `SYSTEM ALIVE V${VERSION_NUMBER}${status?.debug ? ' DEBUGGING' : ''}` : 'SSE RECONNECTING...'}
               </div>
             </div>
           )}
@@ -265,9 +267,11 @@ const App = () => {
           <button onClick={handleRescan} disabled={isRescanning} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}>
             <RefreshCw size={14} className={isRescanning ? 'spin' : ''} /> {!isMobile && 'Rescan'}
           </button>
-          <button onClick={() => { api.triggerCron(); refreshAll(); showNotification("Pipeline triggered"); }} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}>
-            <Play size={14} /> {!isMobile && 'Run Pipeline'}
-          </button>
+          {status?.config?.ALLOW_YTDLP && (
+            <button onClick={() => { api.triggerCron(); refreshAll(); showNotification("Pipeline triggered"); }} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}>
+              <Play size={14} /> {!isMobile && 'Run Pipeline'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -292,7 +296,7 @@ const App = () => {
           >
             <NavBtn id="library" icon={<Database size={18}/>} label={t('app.library')} active={activeTab} setter={navTo} />
             <NavBtn id="tagging" icon={<Tag size={18}/>} label={t('app.manual_tagging')} active={activeTab} count={songs.filter(s => (s.needs_tagging || s.pending_confirmation) && s.status === 'active').length} setter={navTo} />
-            <NavBtn id="discovery" icon={<Download size={18}/>} label={t('app.downloads')} setter={navTo} active={activeTab} />
+            {status?.config?.ALLOW_YTDLP && <NavBtn id="discovery" icon={<Download size={18}/>} label={t('app.downloads')} setter={navTo} active={activeTab} />}
             <NavBtn id="jobs" icon={<History size={18}/>} label={t('app.job_history')} active={activeTab} setter={navTo} />
             <NavBtn id="scheduler" icon={<Clock size={18}/>} label={t('app.scheduler')} active={activeTab} setter={navTo} />
             <NavBtn id="purge" icon={<Trash2 size={18}/>} label={t('app.purge_analysis')} active={activeTab} setter={navTo} />
@@ -371,7 +375,7 @@ const App = () => {
             height: 40, flexShrink: 0
           }}
         >
-          <span>LIVE EVENTS {isLive ? '(LIVE)' : '(SSE RECONNECTING...)'}</span>
+          <span>LIVE EVENTS {isLive ? `(ALIVE V${VERSION_NUMBER})` : '(SSE RECONNECTING...)'}</span>
           <span style={{ transition: 'transform 0.3s ease', transform: isEventsOpen ? 'rotate(0deg)' : 'rotate(180deg)' }}>▼</span>
         </div>
         <div style={{ 

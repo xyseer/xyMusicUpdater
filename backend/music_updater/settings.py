@@ -1,12 +1,16 @@
 import os
+import secrets
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-import secrets
+# The SECRET_KEY is generated dynamically in the Dockerfile CMD 
+# and passed via environment variable to ensure all Gunicorn workers share it.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', secrets.token_urlsafe(50))
 
-DEBUG = True
+VERSION_NUMBER = "1.1.1"
+
+DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -97,8 +101,8 @@ MUSIC_CONFIG = {
         "Default": os.environ.get("SOURCES", "https://www.youtube.com/playlist?list=PLzXW0R_iJb6jO_H6V9lFfC4h9a-6Y-oO").split(","),
     },
     "MAX_SONGS_PER_SOURCE": int(os.environ.get("MAX_SONGS_PER_SOURCE", "10")),
-    "MB_APP_NAME": "MusicUpdater",
-    "MB_APP_VERSION": "0.1.0",
+    "MB_APP_NAME": "xyMusicUpdater",
+    "MB_APP_VERSION": VERSION_NUMBER,
     "MB_CONTACT": os.environ.get("MB_CONTACT", "admin@example.com"),
     "NAVIDROME_URL": os.environ.get("NAVIDROME_URL", "http://navidrome:4533"),
     "NAVIDROME_USER": os.environ.get("NAVIDROME_USER", "admin"),
@@ -110,4 +114,5 @@ MUSIC_CONFIG = {
     "YTDLP_PROXY": os.environ.get("YTDLP_PROXY", ""),
     "UI_DASHBOARD_BG": os.environ.get("UI_DASHBOARD_BG", "true"),
     "UI_THEME_COLOR": os.environ.get("UI_THEME_COLOR", "#9b51e0"),
+    "ALLOW_YTDLP": os.environ.get("ALLOW_YTDLP", "false").lower() == "true",
 }

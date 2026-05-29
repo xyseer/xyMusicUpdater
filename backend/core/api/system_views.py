@@ -17,6 +17,9 @@ def status_view(request):
         "ekey": settings.SECRET_KEY[:16] # Public encryption key for login
     }
     
+    if settings.DEBUG:
+        response_data["debug"] = True
+    
     if not request.user.is_authenticated:
         return Response(response_data)
 
