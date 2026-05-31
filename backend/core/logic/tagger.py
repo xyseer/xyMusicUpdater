@@ -441,52 +441,83 @@ def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, 
 
     return {"results": candidates, "total": total, "page": page, "page_size": page_size}
 
+def _resolve_nd_path(raw_path: str) -> Optional[Path]:
+    """Resolve a Navidrome-relative path to an absolute path on this container's filesystem.
+
+    Navidrome stores paths relative to ND_MUSICFOLDER. NAVIDROME_MUSIC_ROOT tells us
+    where that folder is mounted inside *this* container.
+    """
+    cfg = _cfg()
+    nd_root = cfg.get("NAVIDROME_MUSIC_ROOT", "/music").rstrip("/")
+    candidates: List[Path] = []
+
+    if raw_path.startswith("/"):
+        # Already absolute — try as-is, then remap under nd_root as fallback
+        candidates.append(Path(raw_path))
+    else:
+        # Relative to Navidrome's library root
+        candidates.append(Path(nd_root) / raw_path)
+
+    # Filename-only fallback: search TEMP_FOLDER and PERMANENT_SAVING_DIR
+    fname = os.path.basename(raw_path)
+    if fname:
+        for folder in [cfg.get("TEMP_FOLDER", ""), cfg.get("PERMANENT_SAVING_DIR", "")]:
+            if folder:
+                candidates.append(Path(folder) / fname)
+
+    for p in candidates:
+        try:
+            if p.exists():
+                return p
+        except Exception:
+            pass
+    return None
+
+
 def merge_compilation(nd_song_ids: List[str], job: Optional[Any] = None) -> int:
     import sqlite3
-    from ..models import Song
+    from urllib.parse import unquote
     db_path = "/navidrome_data/navidrome.db"
     count = 0
     if not os.path.exists(db_path):
         return 0
-        
+
     try:
         with sqlite3.connect(db_path, timeout=10) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            
+
             unified_album_name = ""
-            
+
             for nd_id in nd_song_ids:
                 cursor.execute("SELECT path, title, artist, album FROM media_file WHERE id = ?", (nd_id,))
                 row = cursor.fetchone()
                 if not row:
                     continue
-                
+
                 if not unified_album_name:
                     unified_album_name = row['album']
 
-                abs_path = Path("/music") / row['path'] if not row['path'].startswith("/") else Path(row['path'])
-                
-                if abs_path.exists():
-                    data = {
+                raw_path = unquote(row['path'])
+                abs_path = _resolve_nd_path(raw_path)
+
+                if abs_path is not None:
+                    apply_manual_tags_to_file(abs_path, {
                         "title": row['title'],
                         "artist": row['artist'],
                         "album": unified_album_name,
                         "album_artist": "Various Artists",
-                        "compilation": True
-                    }
-                    apply_manual_tags_to_file(abs_path, data)
-                    
-                    song_obj = Song.objects.filter(filename=abs_path.name).first()
-                    if song_obj:
-                        song_obj.album = unified_album_name
-                        song_obj.album_artist = "Various Artists"
-                        song_obj.save()
-                    
-                    cursor.execute("UPDATE media_file SET album = ?, album_artist = 'Various Artists', compilation = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (unified_album_name, nd_id))
+                        "compilation": True,
+                    })
+                    cursor.execute(
+                        "UPDATE media_file SET album=?, album_artist='Various Artists', compilation=1, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                        (unified_album_name, nd_id),
+                    )
                     count += 1
                     emit(f"Merged into compilation: {row['title']}", job=job)
-            
+                else:
+                    emit(f"File not found (skipped): {raw_path}", level="warning", job=job)
+
             conn.commit()
     except Exception as e:
         emit(f"Error merging compilation: {e}", level="error", job=job)

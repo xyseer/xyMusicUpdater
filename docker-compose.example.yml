@@ -69,6 +69,11 @@ services:
       # AcoustID audio fingerprinting API key — get a free key at https://acoustid.org/api-key
       ACOUSTID_API_KEY: ""
 
+      # Path where Navidrome's ND_MUSICFOLDER is mounted inside THIS container.
+      # Must match the volume mount so compilation merge can write ID3 tags to files.
+      # Default /music works for the standard compose setup above.
+      NAVIDROME_MUSIC_ROOT: "/music"
+
       # Timezone (e.g. Asia/Shanghai, America/New_York, Europe/London)
       TZ: "UTC"
 
