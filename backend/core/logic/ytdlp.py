@@ -162,7 +162,8 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
         cmd_meta.append("--no-playlist")
     cmd_meta.append(url)
     targets = []
-    
+    blacklist_patterns = [p.strip().lower() for p in cfg.get("DISCOVERY_KEYWORD_BLACKLIST", "").split(",") if p.strip()]
+
     try:
         result = subprocess.run(cmd_meta, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", timeout=120)
         out, err = result.stdout, result.stderr
@@ -171,19 +172,25 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
             try:
                 entry = json.loads(line)
                 title, vid, uploader, video_id = entry.get("title"), entry.get("url") or entry.get("id"), entry.get("uploader", ""), entry.get("id", "")
-                
+                upload_date = entry.get("upload_date") or entry.get("release_date") or ""
+
                 is_container = entry.get("_type") in ["url", "playlist"] and any(x in vid.lower() for x in ["/channel/", "/user/", "/@", "/playlist?list="])
                 if is_container:
                     emit(f"Skip Container: {title}", job=job)
                     continue
 
                 if vid and title:
-                    if not override_duplicate and _is_duplicate(title, uploader, video_id): 
+                    if not override_duplicate and _is_duplicate(title, uploader, video_id):
                         emit(f"Skip Duplicate: {title}", job=job)
-                    else: 
-                        targets.append((title, vid, video_id))
+                    elif blacklist_patterns and any(p in title.lower() for p in blacklist_patterns):
+                        emit(f"Skipped (blacklisted): {title}", job=job)
+                    else:
+                        targets.append((title, vid, video_id, upload_date))
             except:
                 continue
+
+        # Smart discovery sorting: newest upload first (upload_date is YYYYMMDD — lexicographic == chronological)
+        targets.sort(key=lambda x: x[3], reverse=True)
             
         combined = _sanitize_ytdlp_out(out + "\n" + err, cfg)
         if "ERROR:" in combined or "WARNING:" in combined:
@@ -207,7 +214,7 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     downloaded_files = []
     output_tpl = str(dest / f"%(title)s.%(ext)s")
     
-    for title, vid, video_id in targets:
+    for title, vid, video_id, _upload_date in targets:
         emit(f"Downloading: {title}", job=job)
         cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         

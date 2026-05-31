@@ -159,6 +159,12 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
           </div>
 
           <div style={inputGroup}>
+            <label style={labelStyle}>{t('settings.keyword_blacklist')}</label>
+            <input value={config.DISCOVERY_KEYWORD_BLACKLIST || ''} onChange={e => setConfig({...config, DISCOVERY_KEYWORD_BLACKLIST: e.target.value})} placeholder={t('settings.keyword_blacklist_placeholder')} style={inputStyle} />
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{t('settings.keyword_blacklist_hint')}</div>
+          </div>
+
+          <div style={inputGroup}>
             <label style={labelStyle}>{t('settings.ytdlp_cookies')}</label>
             <textarea value={config.YTDLP_COOKIES === '********' ? '' : config.YTDLP_COOKIES || ''} onChange={e => setConfig({...config, YTDLP_COOKIES: e.target.value})} placeholder={config.YTDLP_COOKIES === '********' ? t('settings.ytdlp_cookies_placeholder_set') : t('settings.ytdlp_cookies_placeholder_empty')} style={{...inputStyle, minHeight: 80, fontFamily: 'monospace', fontSize: 11}} />
           </div>

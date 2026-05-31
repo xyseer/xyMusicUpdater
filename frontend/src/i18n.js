@@ -77,7 +77,10 @@ const resources = {
         "password": "Password",
         "username": "Username",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "Used for audio fingerprint matching. Get a free key at acoustid.org/api-key"
+        "acoustid_hint": "Used for audio fingerprint matching. Get a free key at acoustid.org/api-key",
+        "keyword_blacklist": "Discovery Keyword Blacklist",
+        "keyword_blacklist_placeholder": "e.g. live, remix, karaoke",
+        "keyword_blacklist_hint": "Comma-separated words. Any discovered track whose title contains one of these will be skipped."
       },
       "purge": {
         "title": "Purge Analysis",
@@ -103,6 +106,11 @@ const resources = {
         "override_duplicate": "Force download (ignore duplicates)",
         "fetch": "Fetch",
         "fetch_mix": "Fetch Mix",
+        "upload_title": "Direct File Upload",
+        "upload_hint": "Drop audio files here or click to select (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "Uploading...",
+        "upload_started": "Uploading {{count}} file(s) — check Jobs for progress",
+        "upload_no_audio": "No supported audio files found",
         "automated_discovery": "Automated Discovery",
         "run_all": "Run All Now",
         "add_subscription": "Add Subscription",
@@ -268,7 +276,10 @@ const resources = {
         "password": "密码",
         "username": "用户名",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "用于音频声纹识别。在 acoustid.org/api-key 免费获取"
+        "acoustid_hint": "用于音频声纹识别。在 acoustid.org/api-key 免费获取",
+        "keyword_blacklist": "发现关键词黑名单",
+        "keyword_blacklist_placeholder": "例如：live, remix, karaoke",
+        "keyword_blacklist_hint": "逗号分隔。发现的歌曲标题若包含其中任意词，将被自动跳过。"
       },
       "purge": {
         "title": "清理分析",
@@ -294,6 +305,11 @@ const resources = {
         "override_duplicate": "强制下载 (忽略重复)",
         "fetch": "抓取",
         "fetch_mix": "抓取推荐歌单",
+        "upload_title": "直接上传文件",
+        "upload_hint": "拖放音频文件到此处或点击选择 (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "上传中...",
+        "upload_started": "正在上传 {{count}} 个文件 — 请查看任务列表",
+        "upload_no_audio": "未找到支持的音频文件",
         "automated_discovery": "自动发现任务",
         "run_all": "立即运行全部",
         "add_subscription": "添加订阅",
@@ -460,7 +476,10 @@ const resources = {
         "password": "パスワード",
         "username": "ユーザー名",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "音声フィンガープリント識別に使用。acoustid.org/api-key で無料取得"
+        "acoustid_hint": "音声フィンガープリント識別に使用。acoustid.org/api-key で無料取得",
+        "keyword_blacklist": "発見キーワードブラックリスト",
+        "keyword_blacklist_placeholder": "例: live, remix, karaoke",
+        "keyword_blacklist_hint": "カンマ区切り。タイトルにこれらの単語が含まれるトラックは自動スキップされます。"
       },
       "purge": {
         "title": "パージ分析",
@@ -486,6 +505,11 @@ const resources = {
         "override_duplicate": "強制ダウンロード (重複を無視)",
         "fetch": "取得",
         "fetch_mix": "Mixを取得",
+        "upload_title": "ファイル直接アップロード",
+        "upload_hint": "音声ファイルをここにドロップまたはクリックして選択 (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "アップロード中...",
+        "upload_started": "{{count}} ファイルをアップロード中 — ジョブ一覧で進捗確認",
+        "upload_no_audio": "対応する音声ファイルが見つかりません",
         "automated_discovery": "自動検出タスク",
         "run_all": "今すぐすべて実行",
         "add_subscription": "サブスクリプションを追加",
