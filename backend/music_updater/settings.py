@@ -129,6 +129,7 @@ MUSIC_CONFIG = {
     "API_TIMEOUT_SECONDS": int(os.environ.get("API_TIMEOUT_SECONDS", "15")),
     "DEFAULT_PAGE_SIZE": int(os.environ.get("DEFAULT_PAGE_SIZE", "50")),
     "ACOUSTID_API_KEY": os.environ.get("ACOUSTID_API_KEY", ""),
+    "NAVIDROME_MUSIC_ROOT": os.environ.get("NAVIDROME_MUSIC_ROOT", "/music"),
 }
 
 TIME_ZONE = os.environ.get("TZ", "UTC")
