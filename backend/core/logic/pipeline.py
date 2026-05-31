@@ -2,7 +2,7 @@ import difflib
 from pathlib import Path
 from typing import Any, List, Optional
 from django.utils import timezone as dj_tz
-from .utils import _cfg, emit, _normalize_for_match
+from .utils import _cfg, emit, _normalize_for_match, _clean_query, _score_title_match
 from .ytdlp import _ytdlp_download, _is_duplicate
 from .navidrome import navidrome_rescan
 from .storage import purge_oldest_songs
@@ -22,7 +22,7 @@ def fetch_all_sources(job: Optional[Any] = None) -> List[Path]:
 
 def register_songs(files: List[Path], source: str = "", job: Optional[Any] = None) -> List[Any]:
     from ..models import Song
-    from .tagger import _read_basic_tags, search_musicbrainz_api
+    from .tagger import _read_basic_tags, search_musicbrainz_api, fingerprint_match
     added = []
     for f in files:
         if not f.exists():
@@ -39,16 +39,31 @@ def register_songs(files: List[Path], source: str = "", job: Optional[Any] = Non
                 pass
 
         t, a, al, aa = _read_basic_tags(f)
-        needs_tagging, query_term, pending_conf = True, t if t else f.stem, False
-        if query_term:
-            match = search_musicbrainz_api(query_term, limit=1)
+        raw_query = t if t else f.stem
+        needs_tagging, query_term, pending_conf = True, raw_query, False
+
+        # ── Stage 1: AcoustID audio fingerprinting (most accurate) ──────────
+        fp = fingerprint_match(f)
+        if fp and fp.get("title"):
+            t, a, al, aa = fp['title'], fp['artist'], fp['album'], fp['album_artist']
+            needs_tagging, pending_conf = False, True
+            emit(f"Fingerprint Match (score={fp.get('score', 0):.2f}): {t}", job=job)
+
+        # ── Stage 2: Text search fallback (iTunes + MusicBrainz) ────────────
+        elif raw_query:
+            clean_q = _clean_query(raw_query)
+            match = search_musicbrainz_api(clean_q or raw_query, limit=3)
             if match:
-                res = match[0]
-                if difflib.SequenceMatcher(None, query_term.lower(), res['title'].lower()).ratio() > 0.9:
-                    if not res.get("album"): res["album"] = res["title"]
-                    if not res.get("album_artist"): res["album_artist"] = res.get("artist")
-                    t, a, al, aa, needs_tagging, pending_conf = res['title'], res['artist'], res['album'], res['album_artist'], False, True
-                    emit(f"Auto-Tag Suggested (needs confirmation): {t}", job=job)
+                best, best_score = None, 0.0
+                for res in match:
+                    score = _score_title_match(raw_query, res.get('title') or '')
+                    if score > best_score:
+                        best_score, best = score, res
+                if best and best_score >= 0.65:
+                    if not best.get("album"): best["album"] = best["title"]
+                    if not best.get("album_artist"): best["album_artist"] = best.get("artist")
+                    t, a, al, aa, needs_tagging, pending_conf = best['title'], best['artist'], best['album'], best['album_artist'], False, True
+                    emit(f"Text Match (score={best_score:.2f}): {t}", job=job)
         
         song, created = Song.objects.get_or_create(
             filename=f.name, 
@@ -82,7 +97,7 @@ def run_pipeline(job: Optional[Any] = None) -> None:
     files = fetch_all_sources(job=job)
     if files: 
         register_songs(files, source="cron", job=job)
-        navidrome_rescan(job=job)
+        navidrome_rescan(job=job, full_scan=True)
     purge_oldest_songs(job=job)
     job.status="done"
     job.finished_at = dj_tz.now()
