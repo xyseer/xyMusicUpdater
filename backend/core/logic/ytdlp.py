@@ -121,7 +121,7 @@ def _sanitize_ytdlp_out(text: str, cfg: Dict[str, Any]) -> str:
                     s = s.replace(val, "********")
     return s
 
-def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: Optional[Any] = None, allow_playlist: bool = True, override_duplicate: bool = False) -> List[Path]:
+def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: Optional[Any] = None, allow_playlist: bool = True, override_duplicate: bool = False, on_file_ready=None) -> List[Path]:
     emit(f"Analyzing source: {url}", job=job)
     cfg = _cfg()
     cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(max_items)]
@@ -209,7 +209,7 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     
     for title, vid, video_id in targets:
         emit(f"Downloading: {title}", job=job)
-        cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
+        cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         
         if cookies_raw:
             if cookies_file and cookies_file.exists():
@@ -228,10 +228,13 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=600)
             if res.returncode != 0:
-                # 1. Cleanup all NEW files created during this failed run (junk/partial)
+                # Only delete known partial/temp artifacts — never touch completed .mp3 files
+                # that may belong to a concurrent download job running in another thread.
+                _PARTIAL_SUFFIXES = {".part", ".ytdl", ".tmp"}
                 for f in (set(dest.iterdir()) - before):
-                    try: f.unlink()
-                    except: pass
+                    if f.suffix in _PARTIAL_SUFFIXES or ".temp." in f.name:
+                        try: f.unlink()
+                        except: pass
                 err_msg = _sanitize_ytdlp_out(res.stderr, cfg)
                 emit(f"Download failed for {title}: {err_msg}", level="error", job=job)
             else:
@@ -243,15 +246,22 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
                         valid_files.append(nf)
                         # Save video_id to sidecar files for registration
                         Path(str(nf) + ".vid").write_text(video_id, encoding="utf-8")
+                        # Per-file callback: immediately push into pipeline if provided
+                        if on_file_ready:
+                            try:
+                                on_file_ready(nf)
+                            except Exception as cb_err:
+                                emit(f"Post-download callback error for {nf.name}: {cb_err}", level="warning", job=job)
                     else:
                         emit(f"Corrupted file detected: {nf.name}. Deleting.", level="error", job=job)
                         nf.unlink(missing_ok=True)
                 downloaded_files.extend(valid_files)
-        except Exception as e: 
-            # Aggressive cleanup on exception as well
+        except Exception as e:
+            _PARTIAL_SUFFIXES = {".part", ".ytdl", ".tmp"}
             for f in (set(dest.iterdir()) - before):
-                try: f.unlink()
-                except: pass
+                if f.suffix in _PARTIAL_SUFFIXES or ".temp." in f.name:
+                    try: f.unlink()
+                    except: pass
             emit(f"yt-dlp execution failed for {title}: {e}", level="error", job=job)
 
     if cookies_file and cookies_file.exists():
@@ -262,6 +272,9 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     return downloaded_files
 
 def download_url(url: str, job: Optional[Any] = None, allow_playlist: bool = False, override_duplicate: bool = False) -> List[Path]:
+    from .pipeline import register_songs
+    from .navidrome import navidrome_rescan
+
     cfg = _cfg()
     temp = Path(cfg["TEMP_FOLDER"])
     temp.mkdir(parents=True, exist_ok=True)
@@ -270,7 +283,20 @@ def download_url(url: str, job: Optional[Any] = None, allow_playlist: bool = Fal
         from ..models import DownloadJob
         job = DownloadJob.objects.create(job_type="manual", status="running", url=url)
     emit(f"Starting Download: {url}", job=job)
-    files = _ytdlp_download(url, temp, "manual", max_items=limit, job=job, allow_playlist=allow_playlist, override_duplicate=override_duplicate)
+
+    # Per-song callback: register into DB immediately so the song is visible right away.
+    # Navidrome rescan is NOT triggered here — one incremental rescan fires after the
+    # entire job finishes (in _run_manual_job) to avoid hammering Navidrome per song.
+    def _on_file_ready(f: Path) -> None:
+        register_songs([f], source="manual", job=job)
+
+    files = _ytdlp_download(
+        url, temp, "manual",
+        max_items=limit, job=job,
+        allow_playlist=allow_playlist,
+        override_duplicate=override_duplicate,
+        on_file_ready=_on_file_ready,
+    )
     return files
 
 def search_media(query: str, limit: int = 10) -> List[Dict[str, Any]]:

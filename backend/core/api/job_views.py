@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import DownloadJob
 from ..serializers import DownloadJobSerializer
-from ..logic import search_media, download_url, register_songs, navidrome_rescan
+from ..logic import search_media, download_url, navidrome_rescan
 
 @api_auth_required
 @api_view(["GET"])
@@ -53,10 +53,11 @@ def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False):
         job.status = "running"
         job.started_at = dj_tz.now()
         job.save()
+        # download_url registers each song into DB immediately as it downloads.
+        # One incremental rescan fires here after the whole job completes.
         files = download_url(url, job=job, allow_playlist=allow_playlist, override_duplicate=override_duplicate)
         if files:
-            register_songs(files, source="manual", job=job)
-            navidrome_rescan(job=job)
+            navidrome_rescan(job=job, full_scan=False)
         job.status = "done"
         job.finished_at = dj_tz.now()
         job.save()

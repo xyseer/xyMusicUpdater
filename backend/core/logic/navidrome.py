@@ -66,41 +66,43 @@ def _write_latest_m3u() -> None:
     except Exception as e:
         emit(f"Failed to write latest.m3u: {e}", level="warning")
 
-def navidrome_rescan(job: Optional[Any] = None) -> bool:
+def navidrome_rescan(job: Optional[Any] = None, full_scan: bool = False) -> bool:
     import threading
     def _task():
+        # 1. Update the M3U file IMMEDIATELY (local, fast)
+        _write_latest_m3u()
+
         cfg = _cfg()
         base = cfg["NAVIDROME_URL"].rstrip("/")
         user = cfg["NAVIDROME_USER"]
         passwd = cfg["NAVIDROME_PASSWORD"]
         
-        # 1. Delete previously marked missing files FIRST
+        # 2. Trigger rescan
+        salt = secrets.token_hex(3)
+        token = hashlib.md5(f"{passwd}{salt}".encode()).hexdigest()
+        p = {"u": user, "t": token, "s": salt, "v": "1.16.1", "c": "NDM", "f": "json"}
+        if full_scan:
+            p["fullScan"] = "true"
+
+        try: 
+            # Navidrome's API typically requires .view suffix for Subsonic endpoints
+            r = requests.get(f"{base}/rest/startScan.view", params=p, timeout=10)
+            if r.status_code == 200:
+                scan_type = "full" if full_scan else "incremental"
+                emit(f"Navidrome {scan_type} scan triggered", job=job)
+            else:
+                emit(f"Navidrome scan failed with status {r.status_code}", level="error", job=job)
+        except Exception as e:
+            emit(f"Navidrome scan request error: {e}", level="error", job=job)
+
+        # 3. Optional cleanup (non-blocking)
         try:
             ra = requests.post(f"{base}/auth/login", json={"username": user, "password": passwd}, timeout=10)
             if ra.status_code == 200:
                 tk = ra.json().get("token")
-                rd = requests.delete(f"{base}/api/missing", headers={"x-nd-authorization": f"Bearer {tk}"}, timeout=15)
-                if rd.status_code != 200:
-                    emit(f"Failed to delete missing: {rd.text}", level="warning", job=job)
-            else:
-                emit(f"Navidrome Auth Failed. Check your password in Settings!", level="error", job=job)
-        except Exception as e:
-            emit(f"Navidrome missing cleanup error: {e}", level="warning", job=job)
-            
-        _write_latest_m3u()
-        
-        # 2. Trigger new scan (async)
-        salt = secrets.token_hex(3)
-        token = hashlib.md5(f"{passwd}{salt}".encode()).hexdigest()
-        p = {"u": user, "t": token, "s": salt, "v": "1.16.1", "c": "NDM", "f": "json"}
-        try: 
-            r = requests.get(f"{base}/rest/startScan", params={"fullScan": "true", **p}, timeout=15)
-            if r.status_code != 200 or r.json().get("subsonic-response", {}).get("status") == "failed":
-                emit(f"Navidrome scan failed. Check password. ({r.text})", level="error", job=job)
-            else:
-                emit("Navidrome rescan triggered", job=job)
-        except Exception as e:
-            emit(f"Navidrome scan error: {e}", level="error", job=job)
+                requests.delete(f"{base}/api/missing", headers={"x-nd-authorization": f"Bearer {tk}"}, timeout=10)
+        except Exception:
+            pass
             
     if job:
         _task()
