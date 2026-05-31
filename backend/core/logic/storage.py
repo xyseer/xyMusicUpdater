@@ -90,51 +90,66 @@ def purge_oldest_songs(job: Optional[Any] = None) -> None:
             
     emit(f"Purge complete. {deleted} files removed.", job=job)
 
-def get_upcoming_purges() -> Dict[str, Any]:
+def get_upcoming_purges(candidates_page: int = 1, protected_page: int = 1, page_size: int = 50) -> Dict[str, Any]:
     from ..models import Song
     cfg = _cfg()
     temp = Path(cfg["TEMP_FOLDER"])
     audio_exts = {".mp3", ".flac", ".m4a", ".opus", ".ogg", ".webm"}
+    empty = {
+        "candidates": [], "protected": [],
+        "candidates_total": 0, "protected_total": 0,
+        "candidates_page": candidates_page, "protected_page": protected_page,
+        "page_size": page_size,
+        "debug_info": {"monitored_playlists": "", "total_playlist_tracks": 0}
+    }
     if not temp.exists():
-        return {"candidates":[], "protected": []}
-        
+        return empty
+
     files = sorted([f for f in temp.rglob("*") if f.suffix.lower() in audio_exts], key=lambda f: f.stat().st_mtime)
     m_str = str(cfg.get("MONITORED_PLAYLISTS", "")).strip()
     pl_map = _get_playlist_track_map()
     m_list = [p.strip() for p in m_str.split(",") if p.strip()]
     hold_days = int(cfg.get("HOLD_PERIOD_DAYS", 30))
-    quota = int(cfg.get("MAX_DELETE_PER_PURGE", 100))
     hold_sec = hold_days * 86400
     now = time.time()
-    
+
     candidates: list[dict[str, Any]] = []
     protected: list[dict[str, Any]] = []
     for f in files:
         matched_pls = pl_map.get(f.name, set())
-        
         is_protected = False
         if m_list:
             if any(pl in m_list for pl in matched_pls): is_protected = True
         else:
             if any(pl != 'latest' for pl in matched_pls): is_protected = True
-            
+
         db_s = Song.objects.filter(filename=f.name).first()
         if is_protected:
             protected.append({
-                "filename": f.name, 
-                "playlists": list(matched_pls), 
+                "filename": f.name,
+                "playlists": list(matched_pls),
                 "match_reason": "Ready to Archive" if (db_s and not db_s.needs_tagging) else "Protected but Untagged"
             })
             continue
         if (now - f.stat().st_mtime) > hold_sec:
-            if len(candidates) < quota:
-                candidates.append({"filename": f.name, "mtime": f.stat().st_mtime})
-                
+            candidates.append({"filename": f.name, "mtime": f.stat().st_mtime})
+
+    if page_size < 1:
+        page_size = 50
+
+    c_start = (max(1, candidates_page) - 1) * page_size
+    p_start = (max(1, protected_page) - 1) * page_size
+
     return {
-        "candidates": candidates, 
-        "protected": protected, 
+        "candidates": candidates[c_start:c_start + page_size],
+        "protected": protected[p_start:p_start + page_size],
+        "candidates_total": len(candidates),
+        "protected_total": len(protected),
+        "candidates_page": candidates_page,
+        "protected_page": protected_page,
+        "page_size": page_size,
         "debug_info": {
-            "monitored_playlists": m_str or "All except 'latest'", 
+            "monitored_playlists": m_str or "All except 'latest'",
             "total_playlist_tracks": len(pl_map)
         }
     }
