@@ -97,6 +97,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
 }
 
 # Music Config
@@ -124,4 +127,8 @@ MUSIC_CONFIG = {
     "UI_THEME_COLOR": os.environ.get("UI_THEME_COLOR", "#9b51e0"),
     "ALLOW_YTDLP": os.environ.get("ALLOW_YTDLP", "false").lower() == "true",
     "API_TIMEOUT_SECONDS": int(os.environ.get("API_TIMEOUT_SECONDS", "15")),
+    "DEFAULT_PAGE_SIZE": int(os.environ.get("DEFAULT_PAGE_SIZE", "50")),
+    "ACOUSTID_API_KEY": os.environ.get("ACOUSTID_API_KEY", ""),
 }
+
+TIME_ZONE = os.environ.get("TZ", "UTC")
