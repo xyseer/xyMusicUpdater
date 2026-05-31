@@ -23,7 +23,7 @@ import { MusicEditor } from './components/MusicEditor';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
-const VERSION_NUMBER = "1.1.2";
+const VERSION_NUMBER = "1.1.5";
 
 const layout = {
   container: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' },
