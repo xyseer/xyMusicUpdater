@@ -77,6 +77,22 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
   const configReady = config.DEFAULT_PAGE_SIZE !== undefined;
   const pageSize = parseInt(config.DEFAULT_PAGE_SIZE || 50);
 
+  // Remove a song from local state; re-fetch only when the page becomes empty
+  const dropSong = useCallback((id) => {
+    setSongs(prev => {
+      const next = prev.filter(s => s.id !== id);
+      if (next.length === 0) setTimeout(() => fetchPage(currentPage), 0);
+      return next;
+    });
+    setTotal(prev => Math.max(0, prev - 1));
+    if (onUpdate) onUpdate();
+  }, [currentPage, fetchPage, onUpdate]);
+
+  // Update a song in-place (e.g. after reject)
+  const patchSong = useCallback((id, updates) => {
+    setSongs(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  }, []);
+
   const fetchPage = useCallback(async (page, signal) => {
     setIsLoading(true);
     try {
@@ -232,8 +248,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
       await api.updateSong(id, { ...formData, needs_tagging: false, pending_confirmation: false });
       setEditingId(null);
       notify("Tags saved successfully!");
-      fetchPage(currentPage);
-      if (onUpdate) onUpdate();
+      dropSong(id);
     } catch (e) {
       notify("Failed to save tags: " + (e.response?.data?.error || e.message), "error");
     }
@@ -243,16 +258,15 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
     try {
       await api.confirmTags([id]);
       notify("Tags confirmed!");
-      fetchPage(currentPage);
-      if (onUpdate) onUpdate();
+      dropSong(id);
     } catch (e) { notify("Failed", "error"); }
   };
 
   const handleReject = async (id) => {
     try {
       await api.rejectTags([id]);
-      notify("Rejected");
-      fetchPage(currentPage);
+      notify("Rejected — marked for re-tagging");
+      patchSong(id, { pending_confirmation: false, needs_tagging: true });
       if (onUpdate) onUpdate();
     } catch (e) { notify("Failed", "error"); }
   };
@@ -263,8 +277,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
         await api.revertSong(id);
         notify("Restored!");
         setEditingId(null);
-        fetchPage(currentPage);
-        if (onUpdate) onUpdate();
+        dropSong(id);
       } catch (e) { notify("Failed", "error"); }
     }
   };
@@ -326,8 +339,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
       try {
         await api.deleteSong(id);
         notify("Deleted");
-        fetchPage(currentPage);
-        if (onUpdate) onUpdate();
+        dropSong(id);
       } catch (e) { notify("Failed: " + e.message, "error"); }
     }
   };
@@ -340,7 +352,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
           <div style={{ fontSize: 13, fontWeight: 700 }}>{t('tagging.title')} ({total})</div>
           <div style={{ display: 'flex', gap: 10 }}>
             {songs.some(s => s.pending_confirmation) && (
-                <button onClick={() => api.confirmTags(songs.filter(s => s.pending_confirmation).map(s => s.id)).then(() => { notify("Confirmed!"); fetchPage(currentPage); if (onUpdate) onUpdate(); })} style={{...saveBtnStyle, background: 'var(--accent)'}}>{t('tagging.confirm_all')}</button>
+                <button onClick={() => { const ids = songs.filter(s => s.pending_confirmation).map(s => s.id); api.confirmTags(ids).then(() => { notify("Confirmed!"); ids.forEach(id => dropSong(id)); }); }} style={{...saveBtnStyle, background: 'var(--accent)'}}>{t('tagging.confirm_all')}</button>
             )}
             <button onClick={handleAutoTagAll} style={isAutoTagging ? {...saveBtnStyle, background: '#c0392b'} : saveBtnStyle}>
                 <Wand2 size={14} style={{ marginRight: 6 }} />
