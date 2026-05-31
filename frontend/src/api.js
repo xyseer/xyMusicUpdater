@@ -86,6 +86,11 @@ export const api = {
   trimSong: (id, start, end) => instance.post(`/songs/${id}/trim/`, { start, end }).then(r => r.data),
   confirmTrim: (id, preview_path) => instance.post(`/songs/${id}/trim/confirm/`, { preview_path }).then(r => r.data),
   cleanupPreviews: (preview_path) => instance.post('/editor/cleanup-previews/', { preview_path }).then(r => r.data),
+  uploadSongs: (files) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    return instance.post('/upload/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
+  },
   setTimeout: (seconds) => {
     instance.defaults.timeout = (seconds || 15) * 1000;
   }
