@@ -52,17 +52,33 @@ def _sync_navidrome_metadata(old_path_str: str, new_path_str: str, tags: Dict[st
         pass
 
 def _write_latest_m3u() -> None:
-    from ..models import Song
     cfg = _cfg()
     m3u = Path(cfg["TEMP_FOLDER"]) / "latest.m3u"
-    
-    # We include all "active" songs. (Songs requiring manual tagging are status="active" with needs_tagging=True/pending_confirmation=True)
-    # The user wants all non-deleted files. "moved" files are in permanent storage. 
-    # So we should probably include "active" AND "moved" to be comprehensive, or just "active" if it's meant to be new stuff.
-    # The previous code only checked status="active".
-    latest = Song.objects.exclude(status="deleted").order_by("-created_at")[:100]
+    lines = ["#EXTM3U"]
+
+    # Primary: Navidrome DB — reflects full library regardless of download source
+    db_path = "/navidrome_data/navidrome.db"
+    if os.path.exists(db_path):
+        try:
+            with sqlite3.connect(db_path, timeout=10) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT path FROM media_file WHERE missing=0 ORDER BY created_at DESC LIMIT 100"
+                )
+                for (raw_path,) in cursor.fetchall():
+                    decoded = unquote(raw_path)
+                    lines.append(f"/music/{decoded}" if not decoded.startswith("/") else decoded)
+        except Exception as e:
+            emit(f"latest.m3u: Navidrome DB error: {e}", level="warning")
+
+    # Fallback: Django Song table (Navidrome DB not mounted)
+    if len(lines) == 1:
+        from ..models import Song
+        for s in Song.objects.exclude(status="deleted").order_by("-created_at")[:100]:
+            lines.append(str(s.filepath))
+
     try:
-        m3u.write_text("#EXTM3U\n" + "\n".join([str(s.filepath) for s in latest]) + "\n", encoding="utf-8")
+        m3u.write_text("\n".join(lines) + "\n", encoding="utf-8")
     except Exception as e:
         emit(f"Failed to write latest.m3u: {e}", level="warning")
 
