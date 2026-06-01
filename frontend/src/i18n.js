@@ -16,8 +16,29 @@ const resources = {
         "scheduler": "Scheduler",
         "purge_analysis": "Purge Analysis",
         "compilation_merge": "Compilation Merge",
+        "duplicates": "Duplicates",
         "music_editor": "Music Editor",
         "settings": "Settings"
+      },
+      "duplicates": {
+        "title": "Duplicate Detection",
+        "desc": "Fingerprint your entire library to find identical or near-identical tracks.",
+        "scan": "Scan Library",
+        "scan_started": "Fingerprint scan started — check Jobs for progress",
+        "scanning": "Scanning...",
+        "progress": "Fingerprinted {{scanned}} / {{total}}",
+        "groups_found": "{{count}} duplicate group(s) found",
+        "no_duplicates": "No duplicates found — library looks clean!",
+        "no_results": "Run a scan to find duplicates.",
+        "tracks": "tracks",
+        "marked_delete": "{{count}} marked for deletion",
+        "dismiss": "Dismiss",
+        "delete_selected": "Delete Selected",
+        "confirm_delete": "Delete {{count}} song(s)? This cannot be undone.",
+        "confirm_yes": "Confirm Delete",
+        "cancel": "Cancel",
+        "none_selected": "No songs selected for deletion",
+        "deleted": "Deleted {{count}} song(s)"
       },
       "editor": {
         "title": "Music Editor",
@@ -78,7 +99,9 @@ const resources = {
         "password": "Password",
         "username": "Username",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "Used for audio fingerprint matching. Get a free key at acoustid.org/api-key"
+        "acoustid_hint": "Used for audio fingerprint matching. Get a free key at acoustid.org/api-key",
+        "duplicate_threshold": "Duplicate Detection Threshold",
+        "duplicate_threshold_hint": "Fingerprint similarity ratio (0.5–1.0). 1.0 = exact match only. 0.8 = allows minor re-encodes."
       },
       "purge": {
         "title": "Purge Analysis",
@@ -219,8 +242,29 @@ const resources = {
         "scheduler": "计划任务",
         "purge_analysis": "清理分析",
         "compilation_merge": "合集整理",
+        "duplicates": "重复检测",
         "music_editor": "音乐剪辑",
         "settings": "设置"
+      },
+      "duplicates": {
+        "title": "重复曲目检测",
+        "desc": "对整个曲库进行指纹扫描，找出完全相同或高度相似的曲目。",
+        "scan": "扫描曲库",
+        "scan_started": "指纹扫描已启动 — 请在任务列表查看进度",
+        "scanning": "扫描中...",
+        "progress": "已扫描 {{scanned}} / {{total}}",
+        "groups_found": "发现 {{count}} 组重复曲目",
+        "no_duplicates": "未发现重复曲目，曲库很干净！",
+        "no_results": "请运行扫描以检测重复曲目。",
+        "tracks": "首",
+        "marked_delete": "已标记删除 {{count}} 首",
+        "dismiss": "忽略",
+        "delete_selected": "删除选中",
+        "confirm_delete": "确认删除 {{count}} 首？此操作不可撤销。",
+        "confirm_yes": "确认删除",
+        "cancel": "取消",
+        "none_selected": "未选中任何曲目",
+        "deleted": "已删除 {{count}} 首"
       },
       "editor": {
         "title": "音乐剪辑器",
@@ -281,7 +325,9 @@ const resources = {
         "password": "密码",
         "username": "用户名",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "用于音频声纹识别。在 acoustid.org/api-key 免费获取"
+        "acoustid_hint": "用于音频声纹识别。在 acoustid.org/api-key 免费获取",
+        "duplicate_threshold": "重复检测阈值",
+        "duplicate_threshold_hint": "指纹相似度比例（0.5–1.0）。1.0 = 完全相同，0.8 = 允许轻微重编码差异。"
       },
       "purge": {
         "title": "清理分析",
@@ -423,8 +469,29 @@ const resources = {
         "scheduler": "スケジューラ",
         "purge_analysis": "パージ分析",
         "compilation_merge": "コンピ整理",
+        "duplicates": "重複検出",
         "music_editor": "音楽編集",
         "settings": "設定"
+      },
+      "duplicates": {
+        "title": "重複曲検出",
+        "desc": "ライブラリ全体をフィンガープリントでスキャンし、同一または類似曲を検出します。",
+        "scan": "ライブラリをスキャン",
+        "scan_started": "フィンガープリントスキャン開始 — ジョブ一覧で進捗確認",
+        "scanning": "スキャン中...",
+        "progress": "{{scanned}} / {{total}} 完了",
+        "groups_found": "{{count}} グループの重複を検出",
+        "no_duplicates": "重複なし — ライブラリはクリーンです！",
+        "no_results": "スキャンを実行して重複を検出してください。",
+        "tracks": "曲",
+        "marked_delete": "{{count}} 曲を削除対象にマーク",
+        "dismiss": "無視",
+        "delete_selected": "選択削除",
+        "confirm_delete": "{{count}} 曲を削除しますか？元に戻せません。",
+        "confirm_yes": "削除確定",
+        "cancel": "キャンセル",
+        "none_selected": "削除対象が選択されていません",
+        "deleted": "{{count}} 曲を削除しました"
       },
       "editor": {
         "title": "ミュージックエディタ",
@@ -485,7 +552,9 @@ const resources = {
         "password": "パスワード",
         "username": "ユーザー名",
         "acoustid_api_key": "AcoustID API Key",
-        "acoustid_hint": "音声フィンガープリント識別に使用。acoustid.org/api-key で無料取得"
+        "acoustid_hint": "音声フィンガープリント識別に使用。acoustid.org/api-key で無料取得",
+        "duplicate_threshold": "重複検出しきい値",
+        "duplicate_threshold_hint": "フィンガープリント類似度（0.5–1.0）。1.0 = 完全一致のみ、0.8 = 軽微な再エンコードを許容。"
       },
       "purge": {
         "title": "パージ分析",

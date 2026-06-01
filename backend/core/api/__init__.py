@@ -16,3 +16,4 @@ from .navidrome_views import (
 )
 from .editor_views import stream_song_view, trim_song_view, confirm_trim_view, cleanup_previews_view
 from .auth_views import login_view, logout_view, session_view
+from .duplicate_views import duplicates_status_view, duplicates_scan_view, duplicates_list_view, duplicates_dismiss_view, duplicates_delete_view
