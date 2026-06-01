@@ -28,7 +28,7 @@ ALLOWED_CONFIG_KEYS = [
     "ALLOW_YTDLP",
     "API_TIMEOUT_SECONDS",
     "DEFAULT_PAGE_SIZE",
-    "ACOUSTID_API_KEY"
+    "ACOUSTID_API_KEY",
 ]
 
 @api_auth_required

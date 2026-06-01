@@ -121,10 +121,14 @@ def _sanitize_ytdlp_out(text: str, cfg: Dict[str, Any]) -> str:
                     s = s.replace(val, "********")
     return s
 
-def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: Optional[Any] = None, allow_playlist: bool = True, override_duplicate: bool = False, on_file_ready=None) -> List[Path]:
+def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: Optional[Any] = None, allow_playlist: bool = True, override_duplicate: bool = False, on_file_ready=None, keyword_blacklist: str = "") -> List[Path]:
     emit(f"Analyzing source: {url}", job=job)
     cfg = _cfg()
-    cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(max_items)]
+    blacklist_patterns = [p.strip().lower() for p in keyword_blacklist.split(",") if p.strip()]
+    # Fetch 3× more candidates than needed so smart sort + blacklist/duplicate filtering
+    # can still reach the target quota after items are removed from the pool.
+    fetch_limit = min(max_items * 3, 150)
+    cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(fetch_limit)]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None
@@ -178,10 +182,13 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
                     continue
 
                 if vid and title:
-                    if not override_duplicate and _is_duplicate(title, uploader, video_id): 
+                    upload_date = entry.get("upload_date") or entry.get("release_date") or ""
+                    if not override_duplicate and _is_duplicate(title, uploader, video_id):
                         emit(f"Skip Duplicate: {title}", job=job)
-                    else: 
-                        targets.append((title, vid, video_id))
+                    elif blacklist_patterns and any(p in title.lower() for p in blacklist_patterns):
+                        emit(f"Skipped (blacklisted): {title}", job=job)
+                    else:
+                        targets.append((title, vid, video_id, upload_date))
             except:
                 continue
             
@@ -202,12 +209,16 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     if not targets:
         emit("No new songs found or all are duplicates.", job=job)
         return []
-    
+
+    # Smart sort: newest upload first (upload_date is YYYYMMDD — lexicographic == chronological)
+    targets.sort(key=lambda x: x[3], reverse=True)
+    targets = targets[:max_items]
+
     emit(f"Downloading {len(targets)} new items...", job=job)
     downloaded_files = []
     output_tpl = str(dest / f"%(title)s.%(ext)s")
-    
-    for title, vid, video_id in targets:
+
+    for title, vid, video_id, _upload_date in targets:
         emit(f"Downloading: {title}", job=job)
         cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         

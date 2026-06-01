@@ -33,7 +33,8 @@ def merge_compilation_view(request):
     nd_song_ids = request.data.get("ids", [])
     if not nd_song_ids:
         return Response({"error": "No IDs provided"}, status=400)
-    count = merge_compilation(nd_song_ids)
+    album_artist = (request.data.get("album_artist") or "Various Artists").strip() or "Various Artists"
+    count = merge_compilation(nd_song_ids, album_artist=album_artist)
     return Response({"status": "ok", "merged": count})
 
 def _extract_cover_from_path(abs_path: Path) -> tuple[Optional[bytes], str]:

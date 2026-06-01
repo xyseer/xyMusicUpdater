@@ -11,6 +11,7 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedSongs, setSelectedSongs] = useState({}); // originalIndex -> Set of nd_id
+  const [albumArtists, setAlbumArtists] = useState({});   // originalIndex -> string
   const [currentPage, setCurrentPage] = useState(1);
   const [songPages, setSongPages] = useState({});          // originalIndex -> song page number
   const abortControllerRef = useRef(null);
@@ -33,13 +34,16 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
 
       const initialSelection = {};
       const initialSongPages = {};
+      const initialAlbumArtists = {};
       results.forEach((group, idx) => {
         const originalIdx = (page - 1) * pageSize + idx;
         initialSelection[originalIdx] = new Set(group.songs.map(s => s.nd_id));
         initialSongPages[originalIdx] = 1;
+        initialAlbumArtists[originalIdx] = "Various Artists";
       });
       setSelectedSongs(prev => ({ ...prev, ...initialSelection }));
       setSongPages(prev => ({ ...prev, ...initialSongPages }));
+      setAlbumArtists(prev => ({ ...prev, ...initialAlbumArtists }));
     } catch (e) {
       if (e.name !== 'CanceledError') notify("Failed to fetch candidates: " + e.message, "error");
     } finally {
@@ -74,8 +78,9 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
       notify("Please select at least one song to merge.", "warning");
       return;
     }
+    const albumArtist = (albumArtists[originalIndex] || "Various Artists").trim() || "Various Artists";
     try {
-      const res = await api.mergeCompilation(ids);
+      const res = await api.mergeCompilation(ids, albumArtist);
       notify(t('compilation.items_merged', { count: res.merged }));
       fetchCandidates(currentPage);
       if (onUpdate) onUpdate();
@@ -124,16 +129,28 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
         return (
           <div key={group.originalIndex} style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
             {/* Album header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 15 }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{group.album}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
-                  {group.artist_count} Artists • {group.songs.length} Tracks • {selectedCount} Selected
+            <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 15 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>{group.album}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
+                    {group.artist_count} Artists • {group.songs.length} Tracks • {selectedCount} Selected
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => handleDiscard(group.originalIndex)} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>{t('compilation.discard')}</button>
-                <button onClick={() => handleMerge(group.originalIndex)} style={{ padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{t('compilation.merge_selected')}</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <label style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                      {t('compilation.album_artist')}
+                    </label>
+                    <input
+                      value={albumArtists[group.originalIndex] ?? "Various Artists"}
+                      onChange={e => setAlbumArtists(prev => ({ ...prev, [group.originalIndex]: e.target.value }))}
+                      style={{ padding: '5px 10px', borderRadius: 4, border: '1px solid var(--border)', background: '#1c1c21', color: '#fff', fontSize: 13, width: 180 }}
+                    />
+                  </div>
+                  <button onClick={() => handleDiscard(group.originalIndex)} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>{t('compilation.discard')}</button>
+                  <button onClick={() => handleMerge(group.originalIndex)} style={{ padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{t('compilation.merge_selected')}</button>
+                </div>
               </div>
             </div>
 
@@ -147,7 +164,7 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
                     onClick={() => toggleSong(group.originalIndex, song.nd_id)}
                     style={{ padding: 10, borderRadius: 6, background: isSelected ? 'rgba(52, 199, 89, 0.1)' : '#1c1c21', border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s', overflow: 'hidden' }}
                   >
-                    {tooManySongs ? (
+                    {tooManySongs && song.nd_id !== visibleSongs[0]?.nd_id ? (
                       <div style={{ width: 40, height: 40, borderRadius: 4, background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Music size={18} color="var(--text-dim)" />
                       </div>

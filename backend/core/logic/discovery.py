@@ -24,10 +24,20 @@ def run_single_subscription(sub_id: int) -> int:
     keywords = [k.strip() for k in sub.keywords.split(",") if k.strip()]
     newly_added = 0
     for kw in keywords:
-        search_query = kw if kw.startswith("http") else f"ytsearch{sub.amount}:{kw}"
-        files = _ytdlp_download(search_query, temp, f"discovery_{getattr(sub, 'id')}", max_items=sub.amount, job=job, allow_playlist=True)
-        if files:
-            newly_added += len(register_songs(files, source=f"discovery:{sub.label}", job=job))
+        # For keyword searches, request 3× more candidates than the target quota so the
+        # blacklist/duplicate filter and smart date sort have a meaningful pool to work with.
+        fetch_count = min(sub.amount * 3, 150) if not kw.startswith("http") else sub.amount
+        search_query = kw if kw.startswith("http") else f"ytsearch{fetch_count}:{kw}"
+
+        # Register each song immediately upon download (same as manual download) so songs
+        # appear in the library one by one rather than only after the whole batch finishes.
+        kw_added = 0
+        def _on_file_ready(f: Path, _src=f"discovery:{sub.label}", _job=job) -> None:
+            nonlocal kw_added
+            kw_added += len(register_songs([f], source=_src, job=_job))
+
+        _ytdlp_download(search_query, temp, f"discovery_{getattr(sub, 'id')}", max_items=sub.amount, job=job, allow_playlist=True, keyword_blacklist=sub.keyword_blacklist or "", on_file_ready=_on_file_ready)
+        newly_added += kw_added
     
     sub.last_run = dj_tz.now()
     sub.save()

@@ -474,7 +474,7 @@ def _resolve_nd_path(raw_path: str) -> Optional[Path]:
     return None
 
 
-def merge_compilation(nd_song_ids: List[str], job: Optional[Any] = None) -> int:
+def merge_compilation(nd_song_ids: List[str], album_artist: str = "Various Artists", job: Optional[Any] = None) -> int:
     import sqlite3
     from urllib.parse import unquote
     db_path = "/navidrome_data/navidrome.db"
@@ -506,12 +506,12 @@ def merge_compilation(nd_song_ids: List[str], job: Optional[Any] = None) -> int:
                         "title": row['title'],
                         "artist": row['artist'],
                         "album": unified_album_name,
-                        "album_artist": "Various Artists",
+                        "album_artist": album_artist,
                         "compilation": True,
                     })
                     cursor.execute(
-                        "UPDATE media_file SET album=?, album_artist='Various Artists', compilation=1, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                        (unified_album_name, nd_id),
+                        "UPDATE media_file SET album=?, album_artist=?, compilation=1, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                        (unified_album_name, album_artist, nd_id),
                     )
                     count += 1
                     emit(f"Merged into compilation: {row['title']}", job=job)

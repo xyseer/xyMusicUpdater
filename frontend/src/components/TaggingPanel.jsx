@@ -77,6 +77,21 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
   const configReady = config.DEFAULT_PAGE_SIZE !== undefined;
   const pageSize = parseInt(config.DEFAULT_PAGE_SIZE || 50);
 
+  const fetchPage = useCallback(async (page, signal) => {
+    setIsLoading(true);
+    try {
+      const res = await api.getSongs(signal, 'pending', page, pageSize);
+      setSongs(res.results || []);
+      setTotal(res.total || 0);
+      return res.results || [];
+    } catch (e) {
+      if (e.name !== 'CanceledError') console.error('Failed to fetch tagging songs', e);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pageSize]);
+
   // Remove a song from local state; re-fetch only when the page becomes empty
   const dropSong = useCallback((id) => {
     setSongs(prev => {
@@ -92,21 +107,6 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
   const patchSong = useCallback((id, updates) => {
     setSongs(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   }, []);
-
-  const fetchPage = useCallback(async (page, signal) => {
-    setIsLoading(true);
-    try {
-      const res = await api.getSongs(signal, 'pending', page, pageSize);
-      setSongs(res.results || []);
-      setTotal(res.total || 0);
-      return res.results || [];
-    } catch (e) {
-      if (e.name !== 'CanceledError') console.error('Failed to fetch tagging songs', e);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pageSize]);
 
   useEffect(() => {
     if (!configReady) return;
@@ -245,7 +245,9 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
 
   const save = async (id) => {
     try {
-      await api.updateSong(id, { ...formData, needs_tagging: false, pending_confirmation: false });
+      const payload = { ...formData, needs_tagging: false, pending_confirmation: false };
+      if (!payload.album_artist) payload.album_artist = payload.artist;
+      await api.updateSong(id, payload);
       setEditingId(null);
       notify("Tags saved successfully!");
       dropSong(id);
@@ -272,14 +274,12 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
   };
 
   const handleRevert = async (id) => {
-    if (window.confirm("Roll back to original metadata?")) {
-      try {
-        await api.revertSong(id);
-        notify("Restored!");
-        setEditingId(null);
-        dropSong(id);
-      } catch (e) { notify("Failed", "error"); }
-    }
+    try {
+      await api.revertSong(id);
+      notify("Restored!");
+      setEditingId(null);
+      dropSong(id);
+    } catch (e) { notify("Failed", "error"); }
   };
 
   // ── MANUAL FRONTEND SEARCH ────────────────────────────────────────
@@ -396,7 +396,11 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                             <input value={editingId === s.id ? formData.album : s.album} onChange={e => setFormData({...formData, album: e.target.value})} placeholder={t('tagging.album')} style={{...inputStyle, width: '100%'}} disabled={editingId !== s.id} />
                             {s.pending_confirmation && s.original_tags?.album && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.album}</div>}
                         </div>
-                        
+                        <div>
+                            <input value={editingId === s.id ? formData.album_artist : s.album_artist} onChange={e => setFormData({...formData, album_artist: e.target.value})} placeholder={t('tagging.album_artist')} style={{...inputStyle, width: '100%'}} disabled={editingId !== s.id} />
+                            {s.pending_confirmation && s.original_tags?.album_artist && <div style={{ fontSize: 10, color: '#ff9800', marginTop: 4 }}>{t('tagging.original')} {s.original_tags.album_artist}</div>}
+                        </div>
+
                         <div style={{ display: 'flex', gap: 16 }}>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4 }}>CURRENT COVER</div>

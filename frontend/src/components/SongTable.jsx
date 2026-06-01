@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ShieldCheck, ChevronDown, ChevronRight, Archive, ChevronLeft } from 'lucide-react';
+import { ShieldCheck, ChevronDown, ChevronRight, Archive, ChevronLeft, Trash2, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
 import { api } from '../api';
 
-export const SongTable = ({ playlistMap = {}, config = {} }) => {
+export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
   const { t } = useTranslation();
   const [songs, setSongs] = useState([]);
   const [total, setTotal] = useState(0);
@@ -65,6 +65,23 @@ export const SongTable = ({ playlistMap = {}, config = {} }) => {
     );
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await api.deleteSong(id);
+      setSongs(prev => prev.filter(s => s.id !== id));
+      setTotal(prev => Math.max(0, prev - 1));
+      if (notify) notify("Deleted");
+    } catch (e) { if (notify) notify("Delete failed: " + e.message, "error"); }
+  };
+
+  const handleRetag = async (id) => {
+    try {
+      await api.stageSong(id, { needs_tagging: true, pending_confirmation: false });
+      setSongs(prev => prev.map(s => s.id === id ? { ...s, needs_tagging: true, pending_confirmation: false } : s));
+      if (notify) notify("Marked for re-tagging");
+    } catch (e) { if (notify) notify("Failed: " + e.message, "error"); }
+  };
+
   const renderRow = (song) => {
     const pls = playlistMap[song.filename.toLowerCase()] || [];
     return (
@@ -95,6 +112,17 @@ export const SongTable = ({ playlistMap = {}, config = {} }) => {
           </div>
         </td>
         <td style={tdStyle}>{song.source}</td>
+        {song.status !== 'moved' && (
+          <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+            <button onClick={() => handleRetag(song.id)} title="Mark for re-tagging" style={{ padding: '3px 8px', marginRight: 4, borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Tag size={11} /> {t('song_table.retag')}
+            </button>
+            <button onClick={() => handleDelete(song.id)} title="Delete file" style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #ff4d4d', background: 'transparent', color: '#ff4d4d', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Trash2 size={11} /> {t('song_table.delete')}
+            </button>
+          </td>
+        )}
+        {song.status === 'moved' && <td style={tdStyle} />}
       </tr>
     );
   };
@@ -115,6 +143,7 @@ export const SongTable = ({ playlistMap = {}, config = {} }) => {
               <th style={thStyle}>{t('song_table.title_artist')}</th>
               <th style={thStyle}>{t('song_table.playlists')}</th>
               <th style={thStyle}>{t('song_table.source')}</th>
+              <th style={thStyle}>{t('song_table.actions')}</th>
             </tr>
           </thead>
           <tbody>

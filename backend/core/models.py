@@ -93,6 +93,7 @@ class SearchSubscription(models.Model):
     id: models.BigAutoField = models.BigAutoField(primary_key=True)
     label: models.CharField = models.CharField(max_length=100)
     keywords: models.TextField = models.TextField(help_text="Comma separated")
+    keyword_blacklist: models.TextField = models.TextField(blank=True, default='', help_text="Comma separated title keywords to skip")
     source: models.CharField = models.CharField(max_length=50, default="youtube")
     amount: models.IntegerField = models.IntegerField(default=10)
     cycle_days: models.IntegerField = models.IntegerField(default=7)

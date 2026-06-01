@@ -18,6 +18,7 @@ export const DiscoveryPanel = ({ notify }) => {
   const [newSub, setNewSub] = useState({
     label: '',
     keywords: '',
+    keyword_blacklist: '',
     amount: 10,
     cycle_days: 7,
   });
@@ -50,7 +51,7 @@ export const DiscoveryPanel = ({ notify }) => {
       }
       setIsAdding(false);
       setEditingId(null);
-      setNewSub({ label: '', keywords: '', amount: 10, cycle_days: 7 });
+      setNewSub({ label: '', keywords: '', keyword_blacklist: '', amount: 10, cycle_days: 7 });
       fetchSubs();
     } catch (e) {
       notify("Failed to save subscription: " + e.message, "error");
@@ -62,6 +63,7 @@ export const DiscoveryPanel = ({ notify }) => {
     setNewSub({
       label: sub.label,
       keywords: sub.keywords,
+      keyword_blacklist: sub.keyword_blacklist || '',
       amount: sub.amount,
       cycle_days: sub.cycle_days,
     });
@@ -72,7 +74,7 @@ export const DiscoveryPanel = ({ notify }) => {
   const cancelEdit = () => {
     setIsAdding(false);
     setEditingId(null);
-    setNewSub({ label: '', keywords: '', amount: 10, cycle_days: 7 });
+    setNewSub({ label: '', keywords: '', keyword_blacklist: '', amount: 10, cycle_days: 7 });
   };
 
   const handleDelete = async (id) => {
@@ -141,6 +143,16 @@ export const DiscoveryPanel = ({ notify }) => {
                 {t('discovery.keywords_desc')}
               </div>
             </div>
+            <div style={inputGroup}>
+              <label style={labelStyle}>{t('discovery.keyword_blacklist')}</label>
+              <input
+                value={newSub.keyword_blacklist}
+                onChange={e => setNewSub({...newSub, keyword_blacklist: e.target.value})}
+                style={inputStyle}
+                placeholder={t('discovery.keyword_blacklist_placeholder')}
+              />
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>{t('discovery.keyword_blacklist_hint')}</div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               <div style={inputGroup}>
                 <label style={labelStyle}>{t('discovery.amount')}</label>
@@ -167,6 +179,7 @@ export const DiscoveryPanel = ({ notify }) => {
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
                 {t('discovery.every')} {sub.cycle_days} {t('discovery.days')} • {t('discovery.fetch_top')} {sub.amount} • {t('discovery.last_run')}: {sub.last_run ? new Date(sub.last_run).toLocaleString() : t('discovery.never')}
+                {sub.keyword_blacklist && <span style={{ marginLeft: 8, color: '#ff9800' }}>✕ {sub.keyword_blacklist}</span>}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 5 }}>

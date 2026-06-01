@@ -235,7 +235,7 @@ const App = () => {
             <div style={{ ...layout.grid2, flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: 2 }}>
                 <div style={layout.sectionLabel}>Song Library</div>
-                <SongTable playlistMap={playlistMap} config={status?.config} />
+                <SongTable playlistMap={playlistMap} config={status?.config} notify={showNotification} />
               </div>
               <div style={{ width: isMobile ? '100%' : 300 }}>
                 <div style={layout.sectionLabel}>Playlist Protection</div>
@@ -247,7 +247,7 @@ const App = () => {
           {activeTab === 'discovery' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
-                <ManualDownload onJobStarted={refreshAll} />
+                <ManualDownload onJobStarted={refreshAll} notify={showNotification} />
               </div>
               <DiscoveryPanel notify={showNotification} />
             </div>
