@@ -19,6 +19,7 @@ xyMusicUpdater is a highly customized, full-stack (Django/React) companion appli
 *   **Intelligent Auto-Tagging**: Matches raw downloads against the **MusicBrainz** and **Apple Music** APIs to automatically fetch cover art, album names, and artist metadata.
 *   **In-Browser Music Editor**: Trim audio files precisely using an FFmpeg-powered preview-before-commit workflow, directly within the web UI.
 *   **Compilation Album Merger**: Automatically detects multi-artist albums and provides a one-click merge tool to unify them under "Various Artists," keeping your library clean.
+*   **Acoustic Duplicate Scanner**: Fingerprints your entire Navidrome library using **Chromaprint** (`fpcalc`) and groups acoustically identical tracks — even when they differ in tags, filename, or have intro/outro offsets. Review duplicates in a paginated UI with per-song keep/delete controls; nothing is auto-deleted.
 *   **Purge Analysis & Protection**: Analyzes storage usage and safely archives/deletes old tracks based on customizable retention policies, while protecting songs found in designated "Monitored Playlists."
 *   **Modern Security**: Features AES-CBC encrypted password transmission, a dynamic per-boot `SECRET_KEY`, and a strict `@api_auth_required` API firewall.
 *   **Glassmorphism UI**: A fully responsive, multi-language (EN/ZH/JA) React frontend featuring smooth CSS animations, infinite-scrolling marquees, and dynamic background theming.

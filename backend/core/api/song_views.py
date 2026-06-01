@@ -14,7 +14,7 @@ from ..logic import (
     apply_manual_tags, _delete_from_navidrome_db, navidrome_rescan,
     revert_song_to_original, auto_tag_all_untagged, cleanup_deleted_history,
     search_musicbrainz_api, get_compilation_candidates, merge_compilation,
-    _cfg
+    ignore_compilation_songs, _cfg
 )
 
 @api_auth_required
@@ -36,6 +36,15 @@ def merge_compilation_view(request):
     album_artist = (request.data.get("album_artist") or "Various Artists").strip() or "Various Artists"
     count = merge_compilation(nd_song_ids, album_artist=album_artist)
     return Response({"status": "ok", "merged": count})
+
+@api_auth_required
+@api_view(["POST"])
+def ignore_compilation_view(request):
+    nd_ids = request.data.get("ids", [])
+    if not nd_ids:
+        return Response({"error": "No IDs provided"}, status=400)
+    ignore_compilation_songs(nd_ids)
+    return Response({"status": "ok", "ignored": len(nd_ids)})
 
 def _extract_cover_from_path(abs_path: Path) -> tuple[Optional[bytes], str]:
     if not abs_path.exists():

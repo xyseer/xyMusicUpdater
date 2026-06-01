@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api';
 import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
-import { Music, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Music, ChevronLeft, ChevronRight, EyeOff } from 'lucide-react';
 import defaultCover from '../assets/default-cover.svg';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -95,6 +95,20 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
     setCandidates(prev => prev.filter(c => c.originalIndex !== originalIndex));
   };
 
+  const handleIgnore = async (originalIndex) => {
+    const group = candidates.find(c => c.originalIndex === originalIndex);
+    if (!group) return;
+    const ids = group.songs.map(s => s.nd_id);
+    try {
+      await api.ignoreCompilationSongs(ids);
+      notify(t('compilation.ignored', { count: ids.length }));
+      setCandidates(prev => prev.filter(c => c.originalIndex !== originalIndex));
+      setTotal(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      notify("Ignore failed: " + e.message, "error");
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
 
   if (loading && candidates.length === 0) return <div style={{ padding: 20 }}>{t('compilation.loading')}</div>;
@@ -126,6 +140,7 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
         const songStart = (songPage - 1) * pageSize;
         const visibleSongs = group.songs.slice(songStart, songStart + pageSize);
         const selectedCount = (selectedSongs[group.originalIndex] || new Set()).size;
+        const allSelected = selectedCount === group.songs.length;
         const tooManySongs = group.songs.length > 50;
 
         return (
@@ -150,7 +165,17 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
                       style={{ padding: '5px 10px', borderRadius: 4, border: '1px solid var(--border)', background: '#1c1c21', color: '#fff', fontSize: 13, width: 180 }}
                     />
                   </div>
-                  <button onClick={() => handleDiscard(group.originalIndex)} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>{t('compilation.discard')}</button>
+                  <button
+                    onClick={() => setSelectedSongs(prev => ({
+                      ...prev,
+                      [group.originalIndex]: allSelected ? new Set() : new Set(group.songs.map(s => s.nd_id))
+                    }))}
+                    style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}
+                  >
+                    {allSelected ? 'Deselect All' : 'Select All'}
+                  </button>
+                  <button onClick={() => handleDiscard(group.originalIndex)} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>{t('compilation.discard')}</button>
+                  <button onClick={() => handleIgnore(group.originalIndex)} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', borderRadius: 4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}><EyeOff size={13} />{t('compilation.ignore')}</button>
                   <button onClick={() => handleMerge(group.originalIndex)} style={{ padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{t('compilation.merge_selected')}</button>
                 </div>
               </div>

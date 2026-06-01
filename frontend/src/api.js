@@ -83,6 +83,7 @@ export const api = {
   triggerSchedulerTask: (task_id) => instance.post('/scheduler/trigger/', { task_id }).then(r => r.data),
   getCompilationCandidates: (signal, page, page_size) => instance.get('/compilation/candidates/', { params: { page, page_size }, signal }).then(r => r.data),
   mergeCompilation: (ids, album_artist) => instance.post('/compilation/merge/', { ids, album_artist }).then(r => r.data),
+  ignoreCompilationSongs: (ids) => instance.post('/compilation/ignore/', { ids }).then(r => r.data),
   trimSong: (id, start, end) => instance.post(`/songs/${id}/trim/`, { start, end }).then(r => r.data),
   confirmTrim: (id, preview_path) => instance.post(`/songs/${id}/trim/confirm/`, { preview_path }).then(r => r.data),
   cleanupPreviews: (preview_path) => instance.post('/editor/cleanup-previews/', { preview_path }).then(r => r.data),

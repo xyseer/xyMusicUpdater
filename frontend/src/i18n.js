@@ -59,7 +59,9 @@ const resources = {
         "desc": "Found albums with multiple artists. Set a shared album artist to merge them.",
         "album_artist": "Album Artist",
         "merge_selected": "Merge Selected",
-        "discard": "Discard Suggestion",
+        "discard": "Discard",
+        "ignore": "Ignore Forever",
+        "ignored": "Ignored {{count}} songs permanently.",
         "no_candidates": "No compilation candidates found.",
         "loading": "Scanning library for compilations...",
         "items_merged": "Successfully merged {{count}} tracks."
@@ -285,7 +287,9 @@ const resources = {
         "desc": "发现包含多个艺术家的专辑，设置统一的专辑艺术家进行合并。",
         "album_artist": "专辑艺术家",
         "merge_selected": "合并选中",
-        "discard": "忽略此建议",
+        "discard": "本次忽略",
+        "ignore": "永久忽略",
+        "ignored": "已永久忽略 {{count}} 首曲目。",
         "no_candidates": "未发现需要整理的合集。",
         "loading": "正在扫描全库以查找合集专辑...",
         "items_merged": "成功合并了 {{count}} 首曲目。"
@@ -512,7 +516,9 @@ const resources = {
         "desc": "複数アーティストのアルバムが見つかりました。アルバムアーティストを設定してマージします。",
         "album_artist": "アルバムアーティスト",
         "merge_selected": "選択をマージ",
-        "discard": "この候補を無視",
+        "discard": "今回は無視",
+        "ignore": "永久に無視",
+        "ignored": "{{count}} 曲を永続的に無視しました。",
         "no_candidates": "コンピレーションの候補は見つかりませんでした。",
         "loading": "ライブラリをスキャンしてコンピレーションを探しています...",
         "items_merged": "{{count}} 曲のマージに成功しました。"

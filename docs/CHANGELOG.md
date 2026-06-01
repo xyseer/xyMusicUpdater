@@ -2,6 +2,15 @@
 
 ---
 
+## [1.2.1] — 2026-06-01
+
+### Fixes
+- **Compilation candidates** — Albums merged to any custom album artist (not just "Various Artists") are now correctly excluded from suggestions; fixed logically-impossible SQL condition that was always `false`.
+- **Compilation UI** — Added Select All / Deselect All toggle per album group; added permanent "Ignore Forever" button (`/app/data/compilation_ignored.json`) distinct from session-only Discard.
+- **Tagging cover drag-and-drop** — Original cover is now always draggable; drop zone accepts page-image drags via `text/uri-list`; cross-song cover drag captures a canvas data URL at drag time for reliable synchronous delivery.
+
+---
+
 ## [1.2.0]
 
 ### Features

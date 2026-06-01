@@ -409,9 +409,21 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                                 <div style={{ width: 100, height: 100, background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
                                     <img
                                         src={`/api/songs/${s.id}/cover/?t=${s.updated_at}`}
-                                        draggable={editingId === s.id}
-                                        onDragStart={e => e.dataTransfer.setData('text/plain', 'use-current-cover')}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: editingId === s.id ? 'grab' : 'default' }}
+                                        draggable={true}
+                                        onDragStart={e => {
+                                            const img = e.target;
+                                            try {
+                                                const canvas = document.createElement('canvas');
+                                                canvas.width = img.naturalWidth || 100;
+                                                canvas.height = img.naturalHeight || 100;
+                                                canvas.getContext('2d').drawImage(img, 0, 0);
+                                                e.dataTransfer.setData('text/plain', canvas.toDataURL('image/jpeg', 0.9));
+                                            } catch (_) {
+                                                // fallback: drop handler will fetch by URL
+                                                e.dataTransfer.setData('text/uri-list', `/api/songs/${s.id}/cover/?t=${s.updated_at}`);
+                                            }
+                                        }}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'grab' }}
                                         loading="lazy"
                                     />
                                 </div>
@@ -423,12 +435,20 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                                         e.preventDefault();
                                         setIsDragging(false);
                                         if (!editingId || editingId !== s.id) return;
-                                        if (e.dataTransfer.getData('text/plain') === 'use-current-cover') {
-                                            // Drag from current cover → clear new cover selection
-                                            setFormData(prev => ({ ...prev, cover_url: '' }));
-                                        } else if (e.dataTransfer.files[0]) {
+                                        if (e.dataTransfer.files[0]) {
                                             handleImageFile(e.dataTransfer.files[0]);
+                                            return;
                                         }
+                                        // Canvas-captured data URL from original cover drag (synchronous, most reliable)
+                                        const plain = e.dataTransfer.getData('text/plain');
+                                        if (plain?.startsWith('data:image')) {
+                                            setFormData(prev => ({ ...prev, cover_url: plain }));
+                                            return;
+                                        }
+                                        // Browser-default image drag from search results (text/uri-list, external URL)
+                                        const uriList = e.dataTransfer.getData('text/uri-list');
+                                        const url = uriList?.split('\n').find(l => l.trim() && !l.startsWith('#'))?.trim();
+                                        if (url) setFormData(prev => ({ ...prev, cover_url: url }));
                                     }}
                                     onDragOver={e => { e.preventDefault(); if (editingId === s.id) setIsDragging(true); }}
                                     onDragLeave={() => setIsDragging(false)}

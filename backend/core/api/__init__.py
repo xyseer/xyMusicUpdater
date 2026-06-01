@@ -3,7 +3,7 @@ from .song_views import (
     songs_view, song_detail_view, song_cover_view, revert_song_view,
     auto_tag_all_view, confirm_tags_view, reject_tags_view,
     cleanup_history_view, playlist_map_view, search_musicbrainz_view,
-    compilation_candidates_view, merge_compilation_view, nd_song_cover_view,
+    compilation_candidates_view, merge_compilation_view, ignore_compilation_view, nd_song_cover_view,
     stage_tags_view
 )
 from .job_views import jobs_list, job_detail, manual_download, search_media_view, upload_songs_view

@@ -1,5 +1,6 @@
 import base64
 import difflib
+import json
 import os
 import re
 import requests
@@ -361,6 +362,22 @@ def reject_pending_tags(song_ids: Optional[List[int]] = None, job: Optional[Any]
         emit(f"Rejected tags for: {song.filename}", job=job)
     return count
 
+_COMPILATION_IGNORED_FILE = Path("/app/data/compilation_ignored.json")
+
+def _load_ignored_nd_ids() -> set:
+    if not _COMPILATION_IGNORED_FILE.exists():
+        return set()
+    try:
+        return set(json.loads(_COMPILATION_IGNORED_FILE.read_text()))
+    except Exception:
+        return set()
+
+def ignore_compilation_songs(nd_ids: List[str]) -> None:
+    existing = _load_ignored_nd_ids()
+    existing.update(nd_ids)
+    _COMPILATION_IGNORED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _COMPILATION_IGNORED_FILE.write_text(json.dumps(list(existing)))
+
 def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, Any]:
     import sqlite3
     from urllib.parse import unquote
@@ -369,36 +386,35 @@ def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, 
     if not os.path.exists(db_path):
         return empty
 
-    # Subquery that qualifies multi-artist albums and excludes already-fully-VA ones
+    # Albums qualify as compilation candidates when:
+    #   - they have more than 1 distinct track artist, AND
+    #   - NOT all songs already share the same non-empty album_artist
+    #     (covers both "Various Artists" and any custom merge target)
     _QUALIFY_SQL = """
         SELECT lower(album) as lower_album,
                count(distinct lower(artist)) as artist_count,
-               max(CASE WHEN album_artist = 'Various Artists' THEN 1 ELSE 0 END) as has_va,
-               min(CASE WHEN album_artist = 'Various Artists' OR album_artist IS NULL OR album_artist = '' THEN 0 ELSE 1 END) as has_non_va,
-               min(CASE WHEN album_artist = 'Various Artists' THEN 1 ELSE 0 END) as all_va
+               count(distinct CASE WHEN album_artist IS NOT NULL AND album_artist != ''
+                                   THEN lower(album_artist) ELSE NULL END) as distinct_aa_count,
+               min(CASE WHEN album_artist IS NOT NULL AND album_artist != '' THEN 1 ELSE 0 END) as all_have_aa
         FROM media_file
         WHERE missing=0 AND album != ""
         GROUP BY lower_album
     """
+    _FILTER = "artist_count > 1 AND NOT (distinct_aa_count = 1 AND all_have_aa = 1)"
+
+    ignored = _load_ignored_nd_ids()
 
     try:
         with sqlite3.connect(db_path, timeout=15) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            # Count qualifying albums at SQL level (no Python loop needed)
-            cursor.execute(f"""
-                SELECT count(*) FROM ({_QUALIFY_SQL})
-                WHERE (artist_count > 1 OR (has_va = 1 AND has_non_va = 1))
-                  AND all_va = 0
-            """)
+            cursor.execute(f"SELECT count(*) FROM ({_QUALIFY_SQL}) WHERE {_FILTER}")
             total = cursor.fetchone()[0]
 
-            # Paginated album summaries — SQL LIMIT/OFFSET instead of Python slice
             cursor.execute(f"""
                 SELECT lower_album, artist_count FROM ({_QUALIFY_SQL})
-                WHERE (artist_count > 1 OR (has_va = 1 AND has_non_va = 1))
-                  AND all_va = 0
+                WHERE {_FILTER}
                 ORDER BY lower_album
                 LIMIT ? OFFSET ?
             """, (page_size, (page - 1) * page_size))
@@ -407,7 +423,6 @@ def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, 
             candidates = []
             for row in album_rows:
                 lower_album = row["lower_album"]
-                # Cap per-album songs at 200 to prevent huge payloads
                 cursor.execute("""
                     SELECT id, title, artist, album, album_artist, path
                     FROM media_file
@@ -418,6 +433,8 @@ def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, 
                 songs = []
                 display_album_name = ""
                 for s in cursor.fetchall():
+                    if s["id"] in ignored:
+                        continue
                     if not display_album_name:
                         display_album_name = s["album"]
                     songs.append({
@@ -428,10 +445,11 @@ def get_compilation_candidates(page: int = 1, page_size: int = 50) -> Dict[str, 
                         "album_artist": s["album_artist"],
                         "path": unquote(s["path"]),
                     })
-                if songs:
+                # Only include group if still has 2+ distinct artists after ignore filter
+                if len(songs) >= 2 and len({s["artist"].lower() for s in songs}) > 1:
                     candidates.append({
                         "album": display_album_name,
-                        "artist_count": row["artist_count"],
+                        "artist_count": len({s["artist"].lower() for s in songs}),
                         "songs": songs,
                     })
 

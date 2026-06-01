@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # and passed via environment variable to ensure all Gunicorn workers share it.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', secrets.token_urlsafe(50))
 
-VERSION_NUMBER = "1.2.0"
+VERSION_NUMBER = "1.2.1"
 
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
