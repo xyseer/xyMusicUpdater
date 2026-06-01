@@ -121,6 +121,7 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
 
   const isRunning = scanState.status === 'running';
   const isDone = scanState.status === 'done';
+  const isError = scanState.status === 'error';
   const totalPages = Math.ceil(total / pageSize);
   const pct = scanState.total > 0 ? Math.round((scanState.scanned / scanState.total) * 100) : 0;
 
@@ -161,6 +162,11 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
         {isDone && (
           <div style={{ fontSize: 12, color: total > 0 ? 'var(--red)' : 'var(--green)' }}>
             {total > 0 ? t('duplicates.groups_found', { count: total }) : t('duplicates.no_duplicates')}
+          </div>
+        )}
+        {isError && (
+          <div style={{ fontSize: 12, color: 'var(--red)' }}>
+            {t('duplicates.interrupted')}
           </div>
         )}
       </div>

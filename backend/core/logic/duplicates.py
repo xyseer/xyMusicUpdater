@@ -15,7 +15,13 @@ def get_scan_state() -> Dict[str, Any]:
     if not _RESULTS_FILE.exists():
         return {"status": "idle", "scanned": 0, "total": 0, "fingerprinted": 0, "groups": []}
     try:
-        return json.loads(_RESULTS_FILE.read_text())
+        state = json.loads(_RESULTS_FILE.read_text())
+        # Stale "running" after container restart: lock is fresh (not held) but file says running.
+        # Auto-recover so the user can start a new scan instead of getting 409 forever.
+        if state.get("status") == "running" and not _scan_lock.locked():
+            state["status"] = "error"
+            _save_state(state)
+        return state
     except Exception:
         return {"status": "idle", "scanned": 0, "total": 0, "fingerprinted": 0, "groups": []}
 
