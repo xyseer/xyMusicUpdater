@@ -45,6 +45,7 @@ urlpatterns = [
     path('api/songs/<int:pk>/trim/', views.trim_song_view),
     path('api/songs/<int:pk>/trim/confirm/', views.confirm_trim_view),
     path('api/editor/cleanup-previews/', views.cleanup_previews_view),
+    path('api/upload/', views.upload_songs_view),
     path('api/auth/login/', views.login_view),
     path('api/auth/logout/', views.logout_view),
     path('api/auth/session/', views.session_view),
