@@ -35,8 +35,9 @@ const resources = {
       },
       "compilation": {
         "title": "Compilation Album Merge",
-        "desc": "Found albums with multiple artists. Merge them to 'Various Artists' for better organization.",
-        "merge_selected": "Merge Selected as 'Various Artists'",
+        "desc": "Found albums with multiple artists. Set a shared album artist to merge them.",
+        "album_artist": "Album Artist",
+        "merge_selected": "Merge Selected",
         "discard": "Discard Suggestion",
         "no_candidates": "No compilation candidates found.",
         "loading": "Scanning library for compilations...",
@@ -106,7 +107,12 @@ const resources = {
         "automated_discovery": "Automated Discovery",
         "run_all": "Run All Now",
         "add_subscription": "Add Subscription",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "upload_title": "Direct File Upload",
+        "upload_hint": "Drop audio files here or click to select (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "Uploading...",
+        "upload_started": "Uploading {{count}} file(s) — check Jobs for progress",
+        "upload_no_audio": "No supported audio files found"
       },
       "discovery": {
         "edit_sub": "Edit Subscription",
@@ -124,7 +130,10 @@ const resources = {
         "fetch_top": "Fetch top",
         "last_run": "Last run",
         "never": "Never",
-        "no_subs": "No discovery subscriptions yet."
+        "no_subs": "No discovery subscriptions yet.",
+        "keyword_blacklist": "Keyword Blacklist",
+        "keyword_blacklist_placeholder": "e.g. live, remix, karaoke",
+        "keyword_blacklist_hint": "Comma-separated. Tracks whose title contains any of these words will be skipped for this subscription."
       },
       "tagging": {
         "no_songs": "No songs require manual tagging.",
@@ -161,6 +170,9 @@ const resources = {
         "title_artist": "Title / Artist",
         "playlists": "Playlists",
         "source": "Source",
+        "actions": "Actions",
+        "retag": "Re-tag",
+        "delete": "Delete",
         "no_active": "No active songs.",
         "archived_songs": "ARCHIVED SONGS"
       },
@@ -226,8 +238,9 @@ const resources = {
       },
       "compilation": {
         "title": "合集专辑整理",
-        "desc": "发现包含多个艺术家的专辑。将其设置为 'Various Artists' 以获得更好的分类效果。",
-        "merge_selected": "合并选中的歌曲为 'Various Artists'",
+        "desc": "发现包含多个艺术家的专辑，设置统一的专辑艺术家进行合并。",
+        "album_artist": "专辑艺术家",
+        "merge_selected": "合并选中",
         "discard": "忽略此建议",
         "no_candidates": "未发现需要整理的合集。",
         "loading": "正在扫描全库以查找合集专辑...",
@@ -297,7 +310,12 @@ const resources = {
         "automated_discovery": "自动发现任务",
         "run_all": "立即运行全部",
         "add_subscription": "添加订阅",
-        "cancel": "取消"
+        "cancel": "取消",
+        "upload_title": "直接上传文件",
+        "upload_hint": "拖放音频文件到此处或点击选择 (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "上传中...",
+        "upload_started": "正在上传 {{count}} 个文件 — 请查看任务列表",
+        "upload_no_audio": "未找到支持的音频文件"
       },
       "discovery": {
         "edit_sub": "编辑订阅",
@@ -315,7 +333,10 @@ const resources = {
         "fetch_top": "抓取前",
         "last_run": "上次运行",
         "never": "从不",
-        "no_subs": "暂无发现订阅。"
+        "no_subs": "暂无发现订阅。",
+        "keyword_blacklist": "关键词黑名单",
+        "keyword_blacklist_placeholder": "例如：live, remix, karaoke",
+        "keyword_blacklist_hint": "逗号分隔。此订阅中标题含以下词的歌曲将被自动跳过。"
       },
       "tagging": {
         "no_songs": "没有需要手动标记的歌曲。",
@@ -352,6 +373,9 @@ const resources = {
         "title_artist": "标题 / 艺术家",
         "playlists": "播放列表",
         "source": "来源",
+        "actions": "操作",
+        "retag": "重新标记",
+        "delete": "删除",
         "no_active": "没有活跃的歌曲。",
         "archived_songs": "已存档的歌曲"
       },
@@ -418,8 +442,9 @@ const resources = {
       },
       "compilation": {
         "title": "コンピレーションアルバム整理",
-        "desc": "複数のアーティストが含まれるアルバムが見つかりました。整理のためにアルバムアーティストを 'Various Artists' に設定します。",
-        "merge_selected": "選択した曲を 'Various Artists' としてマージ",
+        "desc": "複数アーティストのアルバムが見つかりました。アルバムアーティストを設定してマージします。",
+        "album_artist": "アルバムアーティスト",
+        "merge_selected": "選択をマージ",
         "discard": "この候補を無視",
         "no_candidates": "コンピレーションの候補は見つかりませんでした。",
         "loading": "ライブラリをスキャンしてコンピレーションを探しています...",
@@ -489,7 +514,12 @@ const resources = {
         "automated_discovery": "自動検出タスク",
         "run_all": "今すぐすべて実行",
         "add_subscription": "サブスクリプションを追加",
-        "cancel": "キャンセル"
+        "cancel": "キャンセル",
+        "upload_title": "ファイル直接アップロード",
+        "upload_hint": "音声ファイルをここにドロップまたはクリックして選択 (.mp3 .flac .m4a .opus .ogg .wav)",
+        "uploading": "アップロード中...",
+        "upload_started": "{{count}} ファイルをアップロード中 — ジョブ一覧で進捗確認",
+        "upload_no_audio": "対応する音声ファイルが見つかりません"
       },
       "discovery": {
         "edit_sub": "サブスクリプションを編集",
@@ -507,7 +537,10 @@ const resources = {
         "fetch_top": "上位を取得",
         "last_run": "最終実行",
         "never": "未実行",
-        "no_subs": "サブスクリプションがありません。"
+        "no_subs": "サブスクリプションがありません。",
+        "keyword_blacklist": "キーワードブラックリスト",
+        "keyword_blacklist_placeholder": "例: live, remix, karaoke",
+        "keyword_blacklist_hint": "カンマ区切り。このサブスクリプションでタイトルに含まれる語句はスキップされます。"
       },
       "tagging": {
         "no_songs": "手動タグ付けが必要な曲はありません。",
@@ -544,6 +577,9 @@ const resources = {
         "title_artist": "タイトル / アーティスト",
         "playlists": "プレイリスト",
         "source": "ソース",
+        "actions": "操作",
+        "retag": "再タグ付け",
+        "delete": "削除",
         "no_active": "アクティブな曲はありません。",
         "archived_songs": "アーカイブ済みの曲"
       },

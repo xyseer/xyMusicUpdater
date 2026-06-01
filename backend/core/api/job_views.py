@@ -72,3 +72,63 @@ def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False):
             pass
     finally:
         connection.close()
+
+
+_UPLOAD_ALLOWED_EXTS = {'.mp3', '.flac', '.m4a', '.opus', '.ogg', '.webm', '.wav'}
+
+@api_auth_required
+@api_view(["POST"])
+def upload_songs_view(request):
+    from pathlib import Path
+    from ..logic import _cfg, emit
+    files = request.FILES.getlist('files')
+    if not files:
+        return Response({"error": "No files provided"}, status=400)
+    cfg = _cfg()
+    temp = Path(cfg["TEMP_FOLDER"])
+    temp.mkdir(parents=True, exist_ok=True)
+    saved_paths = []
+    for f in files:
+        ext = Path(f.name).suffix.lower()
+        if ext not in _UPLOAD_ALLOWED_EXTS:
+            continue
+        dest = temp / f.name
+        if dest.exists():
+            dest = temp / f"{dest.stem}_upload{ext}"
+        with open(dest, 'wb+') as out:
+            for chunk in f.chunks():
+                out.write(chunk)
+        saved_paths.append(str(dest))
+    if not saved_paths:
+        return Response({"error": "No valid audio files"}, status=400)
+    job = DownloadJob.objects.create(
+        job_type="manual", status="queued",
+        created_at=dj_tz.now(), url=f"Upload: {len(saved_paths)} file(s)"
+    )
+    threading.Thread(target=_run_upload_job, args=(job.id, saved_paths), daemon=True).start()
+    return Response(DownloadJobSerializer(job).data, status=201)
+
+
+def _run_upload_job(job_id, file_paths):
+    from pathlib import Path
+    from ..logic import register_songs, emit
+    try:
+        job = DownloadJob.objects.get(pk=job_id)
+        job.status, job.started_at = "running", dj_tz.now()
+        job.save()
+        paths = [Path(p) for p in file_paths]
+        emit(f"Registering {len(paths)} uploaded file(s)...", job=job)
+        register_songs(paths, source="upload", job=job)
+        navidrome_rescan(job=job, full_scan=False)
+        job.status, job.finished_at = "done", dj_tz.now()
+        job.save()
+        emit(f"Upload complete: {len(paths)} file(s) registered", job=job)
+    except Exception as e:
+        try:
+            job = DownloadJob.objects.get(pk=job_id)
+            job.status, job.error, job.finished_at = "failed", str(e), dj_tz.now()
+            job.save()
+        except Exception:
+            pass
+    finally:
+        connection.close()
