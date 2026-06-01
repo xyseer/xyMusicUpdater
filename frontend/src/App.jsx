@@ -24,7 +24,7 @@ import { DuplicatesPanel } from './components/DuplicatesPanel';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
-const VERSION_NUMBER = "1.1.5";
+const VERSION_NUMBER = "1.2.0";
 
 const layout = {
   container: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' },
