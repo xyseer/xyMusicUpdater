@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Upload } from 'lucide-react';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const inputGroup = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' };
@@ -10,6 +11,8 @@ const saveBtnStyle = { padding: '8px 16px', borderRadius: 4, border: 'none', bac
 
 export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const grid2 = { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24 };
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,7 +71,7 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ background: 'var(--surface2)', padding: 24, borderRadius: 8 }}>
         <h3 style={{ margin: '0 0 20px 0', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>Appearance & System</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div style={{ ...grid2 }}>
           <div style={inputGroup}>
             <label style={labelStyle}>Login Background Image</label>
             <label style={{ ...saveBtnStyle, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer' }}>
@@ -82,7 +85,7 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
             <button onClick={onLogout} style={{ ...saveBtnStyle, background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d' }}><LogOut size={16} style={{ marginRight: 8 }} /> Logout</button>
           </div>
         </div>
-        <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div style={{ marginTop: 20, ...grid2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <input type="checkbox" id="showDashboardBg" checked={config.UI_DASHBOARD_BG === 'true'} onChange={e => setConfig({...config, UI_DASHBOARD_BG: e.target.checked ? 'true' : 'false'})} />
             <label htmlFor="showDashboardBg" style={{ ...labelStyle, fontSize: 13 }}>{t('settings.show_dashboard_bg')}</label>
@@ -100,7 +103,7 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
       <div style={{ background: 'var(--surface2)', padding: 24, borderRadius: 8 }}>
         <h3 style={{ margin: '0 0 20px 0', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>Core Settings</h3>
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ ...grid2 }}>
             <div style={inputGroup}>
               <label style={labelStyle}>{t('settings.max_storage_size')}</label>
               <input type="number" value={config.MAX_STORAGE_SIZE || 10} onChange={e => setConfig({...config, MAX_STORAGE_SIZE: e.target.value})} style={inputStyle} />
@@ -147,7 +150,7 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
             <input value={config.NAVIDROME_URL || ''} onChange={e => setConfig({...config, NAVIDROME_URL: e.target.value})} placeholder="e.g. http://localhost:4533" style={inputStyle} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ ...grid2 }}>
             <div style={inputGroup}>
               <label style={labelStyle}>{t('settings.navidrome_user')}</label>
               <input value={config.NAVIDROME_USER || ''} onChange={e => setConfig({...config, NAVIDROME_USER: e.target.value})} placeholder="e.g. admin" style={inputStyle} />

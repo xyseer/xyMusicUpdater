@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from './api';
 import { useSSE } from './hooks/useSSE';
-import { 
-  Settings, Music, Tag, History, Activity, 
-  Database, RefreshCw, Download, Clock, Scissors
+import {
+  Settings, Music, Tag, History, Activity,
+  Database, RefreshCw, Download, Clock, Scissors, X, Play, ExternalLink
 } from 'lucide-react';
 
 import { StorageBar } from './components/StorageBar';
@@ -41,12 +41,12 @@ const layout = {
 };
 
 const NavBtn = ({ icon, label, id, active, count, setter }) => (
-  <div 
+  <div
     className={`nav-btn ${active === id ? 'nav-btn-active' : ''}`}
     style={layout.navBtn}
     onClick={() => setter(id)}
   >
-    {icon} 
+    {icon}
     <span style={{ flex: 1 }}>{label}</span>
     {count > 0 && (
       <div className="animate-bounce" style={{ background: 'var(--red)', color: '#fff', fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 10, position: 'absolute', right: 12 }}>
@@ -93,6 +93,12 @@ const App = () => {
   const { entries, isLive } = useSSE(session.user, onPermanentFailure, sseRetryMs);
 
   const isMobile = windowWidth <= 768;
+
+  useEffect(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   useEffect(() => {
     api.getSession()
@@ -193,7 +199,16 @@ const App = () => {
 
         <header style={{ ...layout.header, background: showBg ? 'rgba(30,30,35,0.4)' : layout.header.background, backdropFilter: showBg ? 'blur(12px)' : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="animate-bounce" style={{ ...layout.logo, overflow: 'hidden' }}><img src="/static/icon.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
+          <div
+            className="animate-bounce"
+            onClick={isMobile ? () => setIsSidebarOpen(v => !v) : undefined}
+            style={{ ...layout.logo, overflow: 'hidden', cursor: isMobile ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            {isMobile && isSidebarOpen
+              ? <X size={22} color="var(--accent)" />
+              : <img src="/static/icon.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            }
+          </div>
           {!isMobile && (
             <div>
               <h1 style={{ fontSize: 18, margin: 0 }}>{t('app.title')}</h1>
@@ -211,13 +226,24 @@ const App = () => {
           </select>
           <button onClick={handleRescan} disabled={isRescanning} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}><RefreshCw size={14} className={isRescanning ? 'spin' : ''} /> {!isMobile && 'Rescan'}</button>
           {status?.config?.ALLOW_YTDLP && (
-            <button onClick={() => { api.triggerCron(); refreshAll(); showNotification("Pipeline triggered"); }} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}><RefreshCw size={14} /> {!isMobile && 'Run Pipeline'}</button>
+            <button onClick={() => { api.triggerCron(); refreshAll(); showNotification("Pipeline triggered"); }} style={{ ...layout.actionBtn, padding: isMobile ? '6px 8px' : '8px 16px' }}><Play size={14} /> {!isMobile && 'Run Pipeline'}</button>
           )}
         </div>
       </header>
 
       <div style={layout.main}>
-          <nav style={{ ...layout.sidebar, background: showBg ? 'rgba(20,20,25,0.4)' : layout.sidebar.background, backdropFilter: showBg ? 'blur(12px)' : 'none' }}>
+          <nav style={{
+            ...layout.sidebar,
+            background: showBg ? 'rgba(20,20,25,0.4)' : layout.sidebar.background,
+            backdropFilter: showBg ? 'blur(12px)' : 'none',
+            ...(isMobile ? {
+              width: isSidebarOpen ? 200 : 0,
+              minWidth: 0,
+              overflow: 'hidden',
+              transition: 'width 0.3s ease',
+              padding: isSidebarOpen ? '16px 0' : 0,
+            } : {}),
+          }}>
             <NavBtn id="library" icon={<Database size={18}/>} label={t('app.library')} active={activeTab} setter={navTo} />
             <NavBtn id="tagging" icon={<Tag size={18}/>} label={t('app.manual_tagging')} active={activeTab} count={pendingCount} setter={navTo} />
             {status?.config?.ALLOW_YTDLP && <NavBtn id="discovery" icon={<Download size={18}/>} label={t('app.downloads')} setter={navTo} active={activeTab} />}
@@ -230,16 +256,28 @@ const App = () => {
             <div style={{ marginTop: 'auto', padding: '10px 0' }}><StorageBar storage={status?.storage} /></div>
           </nav>
 
-        <section key={activeTab} className="animate-fade" style={{ ...layout.content, flex: 1, background: showBg ? 'transparent' : layout.content.background }}>
+        <section key={activeTab} className="animate-fade" style={{ ...layout.content, flex: 1, padding: isMobile ? 12 : 24, background: showBg ? 'transparent' : layout.content.background }}>
           {activeTab === 'library' && (
             <div style={{ ...layout.grid2, flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: 2 }}>
                 <div style={layout.sectionLabel}>Song Library</div>
                 <SongTable playlistMap={playlistMap} config={status?.config} notify={showNotification} />
               </div>
-              <div style={{ width: isMobile ? '100%' : 300 }}>
-                <div style={layout.sectionLabel}>Playlist Protection</div>
-                <PlaylistSelector monitoredPlaylists={status?.config?.MONITORED_PLAYLISTS} onUpdate={fetchStatus} />
+              <div style={{ width: isMobile ? '100%' : 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {status?.config?.NAVIDROME_URL && (
+                  <a
+                    href={status.config.NAVIDROME_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderRadius: 6, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontWeight: 600, fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
+                  >
+                    <ExternalLink size={14} /> Go to Navidrome
+                  </a>
+                )}
+                <div>
+                  <div style={layout.sectionLabel}>Playlist Protection</div>
+                  <PlaylistSelector monitoredPlaylists={status?.config?.MONITORED_PLAYLISTS} onUpdate={fetchStatus} />
+                </div>
               </div>
             </div>
           )}

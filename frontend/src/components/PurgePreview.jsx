@@ -88,12 +88,12 @@ export const PurgePreview = ({ config = {} }) => {
 
       {/* System info */}
       {data.debug_info && (
-        <div className="glass" style={{ padding: '12px 24px', borderRadius: 12, fontSize: 12, color: 'var(--text-dim)', display: 'flex', gap: 32, flexShrink: 0, alignItems: 'center' }}>
+        <div className="glass" style={{ padding: '12px 24px', borderRadius: 12, fontSize: 12, color: 'var(--text-dim)', display: 'flex', gap: 16, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Info size={14} color="var(--accent)" />
             <span style={{ fontWeight: 800, letterSpacing: 1 }}>SYSTEM STATUS:</span>
           </div>
-          <div style={{ display: 'flex', gap: 24 }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div>{t('purge.monitored')}: <span style={{ color: 'var(--text)', fontWeight: 600 }}>{data.debug_info.monitored_playlists}</span></div>
             <div>{t('purge.tracks_found')}: <span style={{ color: 'var(--text)', fontWeight: 600 }}>{data.debug_info.total_playlist_tracks}</span></div>
           </div>

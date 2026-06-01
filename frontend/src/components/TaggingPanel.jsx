@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
 import { ChevronLeft, ChevronRight, Wand2, RotateCcw } from 'lucide-react';
 import axios from 'axios';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // Strip YouTube/video-platform cruft from a song title before searching
 const cleanQuery = (s) => {
@@ -58,6 +59,7 @@ const dropzoneStyle = { padding: '12px', borderRadius: 4, border: '1px dashed va
 
 export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [songs, setSongs] = useState([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -348,7 +350,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
 
   return (
     <div style={{ background: 'var(--surface2)', padding: 16, borderRadius: 8 }}>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 700 }}>{t('tagging.title')} ({total})</div>
           <div style={{ display: 'flex', gap: 10 }}>
             {songs.some(s => s.pending_confirmation) && (
@@ -382,7 +384,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                     </div>
                     
                     {(editingId === s.id || s.pending_confirmation) ? (
-                    <div style={{ display: 'flex', gap: 20 }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20 }}>
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div>
                             <input value={editingId === s.id ? formData.title : s.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder={t('tagging.title')} style={{...inputStyle, width: '100%'}} disabled={editingId !== s.id} />
@@ -444,7 +446,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                             {editingId === s.id ? (
                                 <button onClick={() => save(s.id)} style={{...saveBtnStyle, flex: 1}}>{t('tagging.save_tags')}</button>
                             ) : (
@@ -457,7 +459,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                         </div>
 
                         {editingId === s.id && (
-                        <div style={{ flex: 1, borderLeft: '1px solid #333', paddingLeft: 20 }}>
+                        <div style={{ flex: 1, borderLeft: isMobile ? 'none' : '1px solid #333', borderTop: isMobile ? '1px solid #333' : 'none', paddingLeft: isMobile ? 0 : 20, paddingTop: isMobile ? 16 : 0 }}>
                             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && performSearch()} placeholder={t('tagging.search')} style={{ ...inputStyle, flex: 1 }} />
                             <button onClick={performSearch} disabled={isSearching} style={saveBtnStyle}>{isSearching ? '...' : t('tagging.search')}</button>

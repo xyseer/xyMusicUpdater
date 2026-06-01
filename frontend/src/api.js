@@ -48,7 +48,7 @@ export const api = {
   getStatus: (signal) => instance.get('/status/', { signal }).then(r => r.data),
   getSongs: (signal, status, page, page_size) => instance.get('/songs/', { params: { status, page, page_size }, signal }).then(r => r.data),
   getPlaylistMap: (signal) => instance.get('/songs/playlist-map/', { signal }).then(r => r.data),
-  getJobs: (signal) => instance.get('/jobs/', { signal }).then(r => r.data),
+  getJobs: (signal, page = 1, page_size = 20) => instance.get('/jobs/', { params: { page, page_size }, signal }).then(r => r.data),
   getPermanentLog: (signal) => instance.get('/permanent-log/', { signal }).then(r => r.data),
   manualDownload: (url, allow_playlist = false, override_duplicate = false) => instance.post('/jobs/manual/', { url, allow_playlist, override_duplicate }).then(r => r.data),
   triggerCron: () => instance.post('/jobs/cron/').then(r => r.data),

@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
 import { Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import defaultCover from '../assets/default-cover.svg';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [candidates, setCandidates] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -130,14 +132,14 @@ export const CompilationMergePanel = ({ config = {}, onUpdate, notify }) => {
           <div key={group.originalIndex} style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
             {/* Album header */}
             <div style={{ marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 15 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-start', gap: 16 }}>
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 700 }}>{group.album}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
                     {group.artist_count} Artists • {group.songs.length} Tracks • {selectedCount} Selected
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     <label style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 1, textTransform: 'uppercase' }}>
                       {t('compilation.album_artist')}

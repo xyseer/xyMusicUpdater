@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Trash2, Play, Plus, Link, Search, Edit2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const inputGroup = { display: 'flex', flexDirection: 'column', gap: 5 };
 const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 };
@@ -11,6 +12,7 @@ const secondaryBtnStyle = { padding: '8px 16px', borderRadius: 4, border: '1px s
 
 export const DiscoveryPanel = ({ notify }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -153,7 +155,7 @@ export const DiscoveryPanel = ({ notify }) => {
               />
               <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>{t('discovery.keyword_blacklist_hint')}</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
               <div style={inputGroup}>
                 <label style={labelStyle}>{t('discovery.amount')}</label>
                 <input type="number" value={newSub.amount} onChange={e => setNewSub({...newSub, amount: e.target.value})} style={inputStyle} />

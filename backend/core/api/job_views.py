@@ -11,8 +11,12 @@ from ..logic import search_media, download_url, navidrome_rescan
 @api_auth_required
 @api_view(["GET"])
 def jobs_list(request):
-    jobs = DownloadJob.objects.all().order_by("-created_at")[:50]
-    return Response(DownloadJobSerializer(jobs, many=True).data)
+    page = max(1, int(request.query_params.get("page", 1)))
+    page_size = min(100, max(1, int(request.query_params.get("page_size", 20))))
+    qs = DownloadJob.objects.all().order_by("-created_at")
+    total = qs.count()
+    jobs = qs[(page - 1) * page_size : page * page_size]
+    return Response({"results": DownloadJobSerializer(jobs, many=True).data, "total": total, "page": page, "page_size": page_size})
 
 @api_auth_required
 @api_view(["GET"])
