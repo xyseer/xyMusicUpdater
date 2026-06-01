@@ -2,9 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
 import { ChevronDown, ChevronRight, ChevronLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-const PAGE_SIZE = 20;
-
-export const JobsPanel = ({ notify }) => {
+export const JobsPanel = ({ notify, config = {} }) => {
+  const pageSize = parseInt(config.DEFAULT_PAGE_SIZE || 20);
   const [jobs, setJobs] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -13,7 +12,7 @@ export const JobsPanel = ({ notify }) => {
 
   const fetchJobs = useCallback(async (p = page) => {
     try {
-      const data = await api.getJobs(null, p, PAGE_SIZE);
+      const data = await api.getJobs(null, p, pageSize);
       setJobs(data.results || []);
       setTotal(data.total || 0);
     } catch (e) {
@@ -31,7 +30,7 @@ export const JobsPanel = ({ notify }) => {
 
   const toggle = (id) => setExpandedId(expandedId === id ? null : id);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / pageSize);
 
   const Pagination = () => {
     if (totalPages <= 1) return null;

@@ -91,6 +91,11 @@ export const api = {
     files.forEach(f => formData.append('files', f));
     return instance.post('/upload/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
   },
+  getDuplicatesStatus: () => instance.get('/duplicates/status/').then(r => r.data),
+  startDuplicatesScan: () => instance.post('/duplicates/scan/').then(r => r.data),
+  getDuplicates: (signal, page = 1, page_size = 10) => instance.get('/duplicates/', { params: { page, page_size }, signal }).then(r => r.data),
+  dismissDuplicateGroup: (group_id) => instance.post('/duplicates/dismiss/', { group_id }).then(r => r.data),
+  deleteDuplicates: (nd_ids) => instance.post('/duplicates/delete/', { nd_ids }).then(r => r.data),
   setTimeout: (seconds) => {
     instance.defaults.timeout = (seconds || 15) * 1000;
   }

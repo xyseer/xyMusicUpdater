@@ -29,6 +29,7 @@ ALLOWED_CONFIG_KEYS = [
     "API_TIMEOUT_SECONDS",
     "DEFAULT_PAGE_SIZE",
     "ACOUSTID_API_KEY",
+    "DUPLICATE_THRESHOLD",
 ]
 
 @api_auth_required

@@ -4,7 +4,7 @@ import { api } from './api';
 import { useSSE } from './hooks/useSSE';
 import {
   Settings, Music, Tag, History, Activity,
-  Database, RefreshCw, Download, Clock, Scissors, X, Play, ExternalLink
+  Database, RefreshCw, Download, Clock, Scissors, X, Play, ExternalLink, Copy
 } from 'lucide-react';
 
 import { StorageBar } from './components/StorageBar';
@@ -20,6 +20,7 @@ import { DiscoveryPanel } from './components/DiscoveryPanel';
 import { SchedulerPanel } from './components/SchedulerPanel';
 import { CompilationMergePanel } from './components/CompilationMergePanel';
 import { MusicEditor } from './components/MusicEditor';
+import { DuplicatesPanel } from './components/DuplicatesPanel';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
@@ -251,6 +252,7 @@ const App = () => {
             <NavBtn id="scheduler" icon={<Clock size={18}/>} label={t('app.scheduler')} active={activeTab} setter={navTo} />
             <NavBtn id="purge" icon={<Activity size={18}/>} label={t('app.purge_analysis')} active={activeTab} setter={navTo} />
             <NavBtn id="compilation" icon={<RefreshCw size={18}/>} label={t('app.compilation_merge')} active={activeTab} setter={navTo} />
+            <NavBtn id="duplicates" icon={<Copy size={18}/>} label={t('app.duplicates')} active={activeTab} setter={navTo} />
             <NavBtn id="editor" icon={<Scissors size={18}/>} label={t('app.music_editor')} active={activeTab} setter={navTo} />
             <NavBtn id="settings" icon={<Settings size={18}/>} label={t('app.settings')} active={activeTab} setter={navTo} />
             <div style={{ marginTop: 'auto', padding: '10px 0' }}><StorageBar storage={status?.storage} /></div>
@@ -290,10 +292,11 @@ const App = () => {
               <DiscoveryPanel notify={showNotification} />
             </div>
           )}
-          {activeTab === 'jobs' && <JobsPanel notify={showNotification} />}
+          {activeTab === 'jobs' && <JobsPanel notify={showNotification} config={status?.config} />}
           {activeTab === 'scheduler' && <SchedulerPanel config={status?.config} onUpdate={fetchStatus} notify={showNotification} />}
           {activeTab === 'purge' && <PurgePreview config={status?.config} />}
           {activeTab === 'compilation' && <CompilationMergePanel config={status?.config} onUpdate={refreshAll} notify={showNotification} />}
+          {activeTab === 'duplicates' && <DuplicatesPanel notify={showNotification} config={status?.config} />}
           {activeTab === 'editor' && <MusicEditor config={status?.config} notify={showNotification} onUpdate={refreshAll} />}
           {activeTab === 'settings' && <SettingsPanel onUpdate={fetchStatus} notify={showNotification} onLogout={handleLogout} />}
         </section>

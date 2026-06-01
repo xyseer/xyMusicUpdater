@@ -129,6 +129,11 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
               <input type="number" value={config.DEFAULT_PAGE_SIZE || 50} onChange={e => setConfig({...config, DEFAULT_PAGE_SIZE: e.target.value})} style={inputStyle} />
             </div>
             <div style={inputGroup}>
+              <label style={labelStyle}>{t('settings.duplicate_threshold')}</label>
+              <input type="number" min="0.5" max="1.0" step="0.05" value={config.DUPLICATE_THRESHOLD || 0.80} onChange={e => setConfig({...config, DUPLICATE_THRESHOLD: e.target.value})} style={inputStyle} />
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{t('settings.duplicate_threshold_hint')}</div>
+            </div>
+            <div style={inputGroup}>
               <label style={labelStyle}>{t('settings.acoustid_api_key')}</label>
               <input
                 type="password"
