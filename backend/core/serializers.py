@@ -9,6 +9,7 @@ class ActivityLogSerializer(serializers.ModelSerializer):
 
 class SongSerializer(serializers.ModelSerializer):
     original_tags = serializers.SerializerMethodField()
+    staged_cover_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Song
@@ -26,6 +27,18 @@ class SongSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+
+    def get_staged_cover_url(self, obj):
+        if not obj.pending_confirmation:
+            return ""
+        try:
+            from .logic.tagger import _read_pending_cover_url
+            path = Path(obj.filepath)
+            if path.exists():
+                return _read_pending_cover_url(path)
+        except Exception:
+            pass
+        return ""
 
 class DownloadJobSerializer(serializers.ModelSerializer):
     logs = ActivityLogSerializer(many=True, read_only=True)

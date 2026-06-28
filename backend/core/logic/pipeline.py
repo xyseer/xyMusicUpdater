@@ -1,4 +1,5 @@
 import difflib
+import json
 from pathlib import Path
 from typing import Any, List, Optional
 from django.utils import timezone as dj_tz
@@ -6,6 +7,7 @@ from .utils import _cfg, emit, _normalize_for_match, _clean_query, _score_title_
 from .ytdlp import _ytdlp_download, _is_duplicate
 from .navidrome import navidrome_rescan
 from .storage import purge_oldest_songs
+from .tagger import _read_basic_tags, fingerprint_match, search_musicbrainz_api
 
 def fetch_all_sources(job: Optional[Any] = None) -> List[Path]:
     cfg = _cfg()
@@ -22,7 +24,6 @@ def fetch_all_sources(job: Optional[Any] = None) -> List[Path]:
 
 def register_songs(files: List[Path], source: str = "", job: Optional[Any] = None) -> List[Any]:
     from ..models import Song
-    from .tagger import _read_basic_tags, search_musicbrainz_api, fingerprint_match
     added = []
     for f in files:
         if not f.exists():
@@ -38,19 +39,55 @@ def register_songs(files: List[Path], source: str = "", job: Optional[Any] = Non
             except Exception:
                 pass
 
+        # Read uploader sidecar (e.g. SoundCloud artist) for use as a fallback
+        # when tag reading and online matching don't yield an artist.
+        uploader = ""
+        up_file = Path(str(f) + ".uploader")
+        if up_file.exists():
+            try:
+                uploader = up_file.read_text(encoding="utf-8").strip()
+                up_file.unlink()
+            except Exception:
+                pass
+
+        source_metadata = {}
+        meta_file = Path(str(f) + ".metadata.json")
+        if meta_file.exists():
+            try:
+                source_metadata = json.loads(meta_file.read_text(encoding="utf-8"))
+                meta_file.unlink()
+            except Exception:
+                source_metadata = {}
+        cover_url = (source_metadata.get("cover_url") or "").strip()
+        if cover_url:
+            try:
+                Path(str(f) + ".cover_url").write_text(cover_url, encoding="utf-8")
+            except Exception:
+                pass
+
         t, a, al, aa = _read_basic_tags(f)
         raw_query = t if t else f.stem
         needs_tagging, query_term, pending_conf = True, raw_query, False
 
+        metadata_title = (source_metadata.get("title") or "").strip()
+        metadata_artist = (source_metadata.get("artist") or "").strip()
+        if metadata_title and metadata_artist:
+            t = metadata_title
+            a = metadata_artist
+            al = (source_metadata.get("album") or metadata_title).strip()
+            aa = (source_metadata.get("album_artist") or metadata_artist).strip()
+            needs_tagging, pending_conf = False, True
+            emit(f"Source metadata: {a} - {t}", job=job)
+
         # ── Stage 1: AcoustID audio fingerprinting (most accurate) ──────────
-        fp = fingerprint_match(f)
+        fp = None if (metadata_title and metadata_artist) else fingerprint_match(f)
         if fp and fp.get("title"):
             t, a, al, aa = fp['title'], fp['artist'], fp['album'], fp['album_artist']
             needs_tagging, pending_conf = False, True
             emit(f"Fingerprint Match (score={fp.get('score', 0):.2f}): {t}", job=job)
 
         # ── Stage 2: Text search fallback (iTunes + MusicBrainz) ────────────
-        elif raw_query:
+        elif not (metadata_title and metadata_artist) and raw_query:
             clean_q = _clean_query(raw_query)
             match = search_musicbrainz_api(clean_q or raw_query, limit=3)
             if match:
@@ -64,7 +101,18 @@ def register_songs(files: List[Path], source: str = "", job: Optional[Any] = Non
                     if not best.get("album_artist"): best["album_artist"] = best.get("artist")
                     t, a, al, aa, needs_tagging, pending_conf = best['title'], best['artist'], best['album'], best['album_artist'], False, True
                     emit(f"Text Match (score={best_score:.2f}): {t}", job=job)
-        
+
+        # ── Fallback: preserve basic metadata when no match was found ───────
+        # SoundCloud/YouTube downloads often lack clean ID3 artist tags and may
+        # not match iTunes/MusicBrainz. Rather than leave the record blank, fall
+        # back to the cleaned filename for the title and the uploader (channel /
+        # SoundCloud artist) for the artist so nothing is lost.
+        if not (t or "").strip():
+            t = _clean_query(f.stem) or f.stem
+        if not (a or "").strip() and uploader:
+            a = uploader
+            emit(f"Artist fallback from uploader: {uploader}", job=job)
+
         song, created = Song.objects.get_or_create(
             filename=f.name, 
             defaults={
@@ -73,6 +121,7 @@ def register_songs(files: List[Path], source: str = "", job: Optional[Any] = Non
                 "title": t, 
                 "artist": a, 
                 "album": al, 
+                "album_artist": aa,
                 "source": source, 
                 "file_size": f.stat().st_size, 
                 "status": "active", 
@@ -81,7 +130,7 @@ def register_songs(files: List[Path], source: str = "", job: Optional[Any] = Non
             }
         )
         if not created: 
-            song.status, song.title, song.artist, song.needs_tagging, song.pending_confirmation = "active", t, a, needs_tagging, pending_conf
+            song.status, song.title, song.artist, song.album, song.album_artist, song.needs_tagging, song.pending_confirmation = "active", t, a, al, aa, needs_tagging, pending_conf
             if video_id: song.video_id = video_id
             song.save()
         if job:

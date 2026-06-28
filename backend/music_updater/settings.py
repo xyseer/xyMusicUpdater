@@ -123,6 +123,10 @@ MUSIC_CONFIG = {
     "YTDLP_USERNAME": os.environ.get("YTDLP_USERNAME", ""),
     "YTDLP_PASSWORD": os.environ.get("YTDLP_PASSWORD", ""),
     "YTDLP_PROXY": os.environ.get("YTDLP_PROXY", ""),
+    # Default download/search source: "youtube" or "soundcloud".
+    # YouTube can be flaky (PO tokens, signature challenges); a SoundCloud-only
+    # path provides a reliable fallback entry point.
+    "DOWNLOAD_PROVIDER": os.environ.get("DOWNLOAD_PROVIDER", "youtube"),
     "UI_DASHBOARD_BG": os.environ.get("UI_DASHBOARD_BG", "true"),
     "UI_THEME_COLOR": os.environ.get("UI_THEME_COLOR", "#9b51e0"),
     "ALLOW_YTDLP": os.environ.get("ALLOW_YTDLP", "false").lower() == "true",

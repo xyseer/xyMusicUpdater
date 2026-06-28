@@ -43,10 +43,11 @@ def manual_download(request):
 @api_view(["GET"])
 def search_media_view(request):
     q = request.query_params.get("q")
+    provider = request.query_params.get("provider")
     if not q:
         return Response({"error": "Query required"}, status=400)
     try:
-        results = search_media(q)
+        results = search_media(q, provider=provider)
         return Response(results)
     except Exception as e:
         return Response({"error": str(e)}, status=500)

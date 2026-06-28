@@ -73,7 +73,7 @@ export const api = {
   stageSong: (id, data) => instance.patch(`/songs/${id}/stage/`, data).then(r => r.data),
   deleteSong: (id) => instance.delete(`/songs/${id}/`).then(r => r.data),
   getUpcomingPurges: (signal, candidates_page, protected_page, page_size) => instance.get('/purge/upcoming/', { params: { candidates_page, protected_page, page_size }, signal }).then(r => r.data),
-  searchMedia: (q, signal) => instance.get('/search-media/', { params: { q }, signal }).then(r => r.data),
+  searchMedia: (q, provider, signal) => instance.get('/search-media/', { params: { q, provider }, signal }).then(r => r.data),
   autoTagAll: () => instance.post('/songs/auto-tag-all/').then(r => r.data),
   confirmTags: (ids) => instance.post('/songs/confirm-tags/', { ids }).then(r => r.data),
   rejectTags: (ids) => instance.post('/songs/reject-tags/', { ids }).then(r => r.data),

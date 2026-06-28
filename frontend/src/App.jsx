@@ -287,7 +287,7 @@ const App = () => {
           {activeTab === 'discovery' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
-                <ManualDownload onJobStarted={refreshAll} notify={showNotification} />
+                <ManualDownload onJobStarted={refreshAll} notify={showNotification} config={status?.config} />
               </div>
               <DiscoveryPanel notify={showNotification} />
             </div>

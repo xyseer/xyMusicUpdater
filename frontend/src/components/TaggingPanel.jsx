@@ -239,7 +239,7 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
       artist: song.artist || '', 
       album: song.album || '',
       album_artist: song.album_artist || '',
-      cover_url: ''
+      cover_url: song.staged_cover_url || ''
     });
     setSearchQuery(song.title || '');
     setSearchResults([]);
@@ -456,10 +456,15 @@ export const TaggingPanel = ({ config = {}, playlistMap = {}, onUpdate, notify }
                                     style={{ width: 100, height: 100, border: `1px dashed ${isDragging && editingId === s.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 4, background: isDragging && editingId === s.id ? 'rgba(155,81,224,0.08)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: editingId === s.id ? 'pointer' : 'default', overflow: 'hidden' }}>
                                     {editingId === s.id
                                         ? <img
-                                            src={formData.cover_url || `/api/songs/${s.id}/cover/?t=${s.updated_at}`}
+                                            src={formData.cover_url || s.staged_cover_url || `/api/songs/${s.id}/cover/?t=${s.updated_at}`}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                           />
-                                        : <span style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', padding: 4 }}>—</span>
+                                        : s.staged_cover_url
+                                            ? <img
+                                                src={s.staged_cover_url}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                              />
+                                            : <span style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', padding: 4 }}>—</span>
                                     }
                                     <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={e => handleImageFile(e.target.files[0])} />
                                 </div>

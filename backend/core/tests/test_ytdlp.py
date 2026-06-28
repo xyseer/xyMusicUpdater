@@ -1,7 +1,15 @@
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
-from core.logic.ytdlp import _is_valid_audio, _is_duplicate, _sanitize_ytdlp_out
+from core.logic.ytdlp import (
+    _is_valid_audio,
+    _is_duplicate,
+    _sanitize_ytdlp_out,
+    _is_rate_limited,
+    _metadata_from_entry,
+    _ytdlp_download,
+    search_media,
+)
 
 
 # ── _is_valid_audio ───────────────────────────────────────────────────────────
@@ -130,3 +138,50 @@ def test_sanitize_ytdlp_out_short_cookie_values_not_masked():
     text = "cookie value is ok"
     result = _sanitize_ytdlp_out(text, cfg)
     assert result == text  # short values are not masked
+
+
+# ── SoundCloud metadata / rate limits ────────────────────────────────────────
+
+def test_is_rate_limited_detects_429():
+    assert _is_rate_limited("ERROR: HTTP Error 429: Too Many Requests") is True
+
+
+def test_is_rate_limited_returns_false_for_regular_error():
+    assert _is_rate_limited("ERROR: video unavailable") is False
+
+
+def test_metadata_from_entry_prefers_track_artist_fields():
+    entry = {
+        "title": "shiki - sepia(Ver. Cristierra)",
+        "track": "sepia(Ver. Cristierra)",
+        "artist": "shiki",
+        "uploader": "Someone Else",
+    }
+
+    assert _metadata_from_entry(entry) == {
+        "title": "sepia(Ver. Cristierra)",
+        "artist": "shiki",
+        "album": "sepia(Ver. Cristierra)",
+        "album_artist": "shiki",
+    }
+
+
+def test_search_media_soundcloud_uses_direct_client(mocker):
+    sc_search = mocker.patch("core.logic.soundcloud.search_soundcloud", return_value=[{"title": "sepia"}])
+    subprocess_run = mocker.patch("subprocess.run")
+
+    assert search_media("shiki sepia", provider="soundcloud") == [{"title": "sepia"}]
+    sc_search.assert_called_once_with("shiki sepia", limit=10)
+    subprocess_run.assert_not_called()
+
+
+def test_ytdlp_download_soundcloud_uses_direct_client(tmp_path, mocker):
+    out = tmp_path / "sepia.mp3"
+    sc_download = mocker.patch("core.logic.soundcloud.download_soundcloud_source", return_value=[out])
+    subprocess_run = mocker.patch("subprocess.run")
+
+    result = _ytdlp_download("https://soundcloud.com/shiki/sepia", tmp_path, "manual")
+
+    assert result == [out]
+    sc_download.assert_called_once()
+    subprocess_run.assert_not_called()

@@ -7,6 +7,46 @@ from typing import Any, Dict, List, Optional, Tuple
 from django.utils import timezone as dj_tz
 from .utils import _cfg, emit, _normalize_for_match
 
+# Map a download-source identifier to yt-dlp's search prefix. YouTube is the
+# historical default; SoundCloud is a reliable alternative when YouTube
+# extraction is failing (PO tokens, signature challenges, geo blocks).
+_SEARCH_PREFIXES = {
+    "youtube": "ytsearch",
+    "soundcloud": "scsearch",
+}
+
+_RATE_LIMIT_MARKERS = (
+    "HTTP Error 429",
+    "Too Many Requests",
+    "rate limit",
+    "rate-limit",
+)
+
+def _search_prefix(provider: str = "youtube") -> str:
+    return _SEARCH_PREFIXES.get((provider or "youtube").strip().lower(), "ytsearch")
+
+def _is_rate_limited(text: str) -> bool:
+    haystack = text or ""
+    return any(marker.lower() in haystack.lower() for marker in _RATE_LIMIT_MARKERS)
+
+def _metadata_from_entry(entry: Dict[str, Any]) -> Dict[str, str]:
+    title = (entry.get("track") or entry.get("title") or "").strip()
+    artist = (
+        entry.get("artist")
+        or entry.get("creator")
+        or entry.get("uploader")
+        or entry.get("channel")
+        or ""
+    ).strip()
+    album = (entry.get("album") or entry.get("playlist_title") or "").strip()
+    album_artist = (entry.get("album_artist") or artist).strip()
+    return {
+        "title": title,
+        "artist": artist,
+        "album": album or title,
+        "album_artist": album_artist,
+    }
+
 def _is_valid_audio(path: Path) -> bool:
     """Verifies audio file integrity using ffprobe."""
     if not path.exists() or path.stat().st_size == 0:
@@ -123,6 +163,21 @@ def _sanitize_ytdlp_out(text: str, cfg: Dict[str, Any]) -> str:
 
 def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: Optional[Any] = None, allow_playlist: bool = True, override_duplicate: bool = False, on_file_ready=None, keyword_blacklist: str = "") -> List[Path]:
     emit(f"Analyzing source: {url}", job=job)
+    from .soundcloud import download_soundcloud_source, is_soundcloud_source
+    if is_soundcloud_source(url):
+        return download_soundcloud_source(
+            url,
+            dest,
+            max_items=max_items,
+            job=job,
+            allow_playlist=allow_playlist,
+            override_duplicate=override_duplicate,
+            on_file_ready=on_file_ready,
+            keyword_blacklist=keyword_blacklist,
+            duplicate_checker=_is_duplicate,
+            validator=_is_valid_audio,
+        )
+
     cfg = _cfg()
     blacklist_patterns = [p.strip().lower() for p in keyword_blacklist.split(",") if p.strip()]
     # Fetch 3× more candidates than needed so smart sort + blacklist/duplicate filtering
@@ -188,11 +243,14 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
                     elif blacklist_patterns and any(p in title.lower() for p in blacklist_patterns):
                         emit(f"Skipped (blacklisted): {title}", job=job)
                     else:
-                        targets.append((title, vid, video_id, upload_date))
+                        targets.append((title, vid, video_id, upload_date, uploader, _metadata_from_entry(entry)))
             except:
                 continue
             
         combined = _sanitize_ytdlp_out(out + "\n" + err, cfg)
+        if _is_rate_limited(combined):
+            emit("Source analysis hit a rate limit (429 / Too Many Requests); stopping this batch to avoid more requests.", level="warning", job=job)
+            return []
         if "ERROR:" in combined or "WARNING:" in combined:
             err_lines = [l for l in combined.splitlines() if "ERROR:" in l or "WARNING:" in l]
             if err_lines:
@@ -218,7 +276,7 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     downloaded_files = []
     output_tpl = str(dest / f"%(title)s.%(ext)s")
 
-    for title, vid, video_id, _upload_date in targets:
+    for title, vid, video_id, _upload_date, uploader, source_metadata in targets:
         emit(f"Downloading: {title}", job=job)
         cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         
@@ -248,6 +306,9 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
                         except: pass
                 err_msg = _sanitize_ytdlp_out(res.stderr, cfg)
                 emit(f"Download failed for {title}: {err_msg}", level="error", job=job)
+                if _is_rate_limited(err_msg):
+                    emit("Download source is rate-limited; stopping remaining downloads for this job.", level="warning", job=job)
+                    break
             else:
                 new_files = [f for f in (set(dest.iterdir()) - before) if f.suffix.lower() == ".mp3"]
                 valid_files = []
@@ -257,6 +318,21 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
                         valid_files.append(nf)
                         # Save video_id to sidecar files for registration
                         Path(str(nf) + ".vid").write_text(video_id, encoding="utf-8")
+                        # Save uploader (e.g. SoundCloud artist) so register_songs can
+                        # use it as an artist fallback when tag/text matching fails.
+                        if uploader:
+                            try:
+                                Path(str(nf) + ".uploader").write_text(uploader, encoding="utf-8")
+                            except Exception:
+                                pass
+                        if source_metadata:
+                            try:
+                                Path(str(nf) + ".metadata.json").write_text(
+                                    json.dumps(source_metadata, ensure_ascii=False),
+                                    encoding="utf-8",
+                                )
+                            except Exception:
+                                pass
                         # Per-file callback: immediately push into pipeline if provided
                         if on_file_ready:
                             try:
@@ -310,9 +386,16 @@ def download_url(url: str, job: Optional[Any] = None, allow_playlist: bool = Fal
     )
     return files
 
-def search_media(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+def search_media(query: str, limit: int = 10, provider: Optional[str] = None) -> List[Dict[str, Any]]:
     cfg = _cfg()
-    cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--dump-json", "--flat-playlist", f"ytsearch{limit}:{query}"]
+    if not provider:
+        provider = cfg.get("DOWNLOAD_PROVIDER", "youtube")
+    if (provider or "").strip().lower() == "soundcloud":
+        from .soundcloud import search_soundcloud
+        return search_soundcloud(query, limit=limit)
+
+    prefix = _search_prefix(provider)
+    cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--dump-json", "--flat-playlist", f"{prefix}{limit}:{query}"]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None

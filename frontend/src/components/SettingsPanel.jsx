@@ -172,6 +172,15 @@ export const SettingsPanel = ({ onUpdate, notify, onLogout }) => {
           </div>
 
           <div style={inputGroup}>
+            <label style={labelStyle}>{t('settings.download_provider')}</label>
+            <select value={config.DOWNLOAD_PROVIDER || 'youtube'} onChange={e => setConfig({...config, DOWNLOAD_PROVIDER: e.target.value})} style={inputStyle}>
+              <option value="youtube">{t('settings.provider_youtube')}</option>
+              <option value="soundcloud">{t('settings.provider_soundcloud')}</option>
+            </select>
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>{t('settings.download_provider_hint')}</div>
+          </div>
+
+          <div style={inputGroup}>
             <label style={labelStyle}>{t('settings.ytdlp_proxy')}</label>
             <input value={config.YTDLP_PROXY || ''} onChange={e => setConfig({...config, YTDLP_PROXY: e.target.value})} placeholder={t('settings.ytdlp_proxy_placeholder')} style={inputStyle} />
           </div>

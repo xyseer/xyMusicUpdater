@@ -1,4 +1,5 @@
 import pytest
+import json
 from pathlib import Path
 from core.logic.pipeline import register_songs, retry_interrupted_jobs
 
@@ -63,6 +64,40 @@ def test_register_songs_reads_video_id_sidecar(tmp_path, mocker):
     song = Song.objects.get(filename=mp3.name)
     assert song.video_id == "abc123XYZ"
     assert not vid.exists()  # sidecar must be removed after reading
+
+
+@pytest.mark.django_db
+def test_register_songs_uses_source_metadata_sidecar_without_online_matching(tmp_path, mocker):
+    from core.models import Song
+    mp3 = tmp_path / "sepia.mp3"
+    mp3.write_bytes(b"ID3" + b"\0" * 100)
+    meta = Path(str(mp3) + ".metadata.json")
+    meta.write_text(json.dumps({
+        "title": "sepia(Ver. Cristierra)",
+        "artist": "shiki",
+        "album": "sepia(Ver. Cristierra)",
+        "album_artist": "shiki",
+        "cover_url": "https://i1.sndcdn.com/artworks-test-t500x500.jpg",
+    }), encoding="utf-8")
+
+    mocker.patch("core.logic.pipeline._read_basic_tags", return_value=("", "", "", ""))
+    fingerprint = mocker.patch("core.logic.pipeline.fingerprint_match", return_value=None)
+    text_search = mocker.patch("core.logic.pipeline.search_musicbrainz_api", return_value=[])
+
+    result = register_songs([mp3], source="manual")
+
+    assert len(result) == 1
+    song = Song.objects.get(filename=mp3.name)
+    assert song.title == "sepia(Ver. Cristierra)"
+    assert song.artist == "shiki"
+    assert song.album == "sepia(Ver. Cristierra)"
+    assert song.album_artist == "shiki"
+    assert song.needs_tagging is False
+    assert song.pending_confirmation is True
+    assert not meta.exists()
+    assert Path(str(mp3) + ".cover_url").read_text(encoding="utf-8") == "https://i1.sndcdn.com/artworks-test-t500x500.jpg"
+    fingerprint.assert_not_called()
+    text_search.assert_not_called()
 
 
 @pytest.mark.django_db

@@ -118,6 +118,29 @@ def test_confirm_pending_tags_clears_flag(tmp_path, mocker):
 
 
 @pytest.mark.django_db
+def test_confirm_pending_tags_applies_pending_cover_url(tmp_path, mocker):
+    from core.models import Song
+    f = tmp_path / "confirm_cover.mp3"
+    f.touch()
+    cover = Path(str(f) + ".cover_url")
+    cover.write_text("https://i1.sndcdn.com/artworks-test-t500x500.jpg", encoding="utf-8")
+    song = Song.objects.create(
+        filename="confirm_cover.mp3", filepath=str(f),
+        title="Title", artist="Artist", album="Album",
+        pending_confirmation=True,
+    )
+    apply_tags = mocker.patch("core.logic.tagger.apply_manual_tags_to_file")
+    mocker.patch("core.logic.tagger.navidrome_rescan")
+
+    count = confirm_pending_tags(song_ids=[song.pk])
+
+    assert count == 1
+    apply_tags.assert_called_once()
+    assert apply_tags.call_args.args[1]["cover_url"] == "https://i1.sndcdn.com/artworks-test-t500x500.jpg"
+    assert not cover.exists()
+
+
+@pytest.mark.django_db
 def test_confirm_pending_tags_only_processes_specified_ids(tmp_path, mocker):
     from core.models import Song
     f1, f2 = tmp_path / "s1.mp3", tmp_path / "s2.mp3"

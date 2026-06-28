@@ -4,9 +4,10 @@ import { Download, Search, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
 
-export const ManualDownload = ({ onJobStarted, notify }) => {
+export const ManualDownload = ({ onJobStarted, notify, config }) => {
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState('');
+  const [provider, setProvider] = useState(config?.DOWNLOAD_PROVIDER || 'youtube');
   const [allowPlaylist, setAllowPlaylist] = useState(false);
   const [overrideDuplicate, setOverrideDuplicate] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -27,7 +28,7 @@ export const ManualDownload = ({ onJobStarted, notify }) => {
       setIsSearching(true);
       setSearchResults([]);
       try {
-        const results = await api.searchMedia(inputVal);
+        const results = await api.searchMedia(inputVal, provider);
         setSearchResults(results || []);
       } catch (err) {
         if (notify) notify("Search failed: " + err.message, "error");
@@ -79,12 +80,35 @@ export const ManualDownload = ({ onJobStarted, notify }) => {
       <div>
         <div style={{ marginBottom: 10, fontWeight: 700, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text-dim)' }}>{t('downloads.title')}</div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Search source toggle — applies to keyword searches (URLs download from either source directly) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{t('downloads.search_source')}</span>
+            <div style={{ display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+              {[
+                { id: 'youtube', label: t('downloads.provider_youtube') },
+                { id: 'soundcloud', label: t('downloads.provider_soundcloud') },
+              ].map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProvider(p.id)}
+                  style={{
+                    padding: '5px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    background: provider === p.id ? 'var(--accent)' : 'transparent',
+                    color: provider === p.id ? '#fff' : 'var(--text-dim)',
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <input
               type="text"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              placeholder={t('downloads.placeholder')}
+              placeholder={provider === 'soundcloud' ? t('downloads.placeholder_soundcloud') : t('downloads.placeholder')}
               style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid var(--border)', background: '#1c1c21', color: '#fff' }}
             />
             <button type="submit" disabled={isSearching} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>

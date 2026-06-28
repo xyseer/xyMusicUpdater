@@ -207,6 +207,24 @@ def apply_manual_tags_to_file(path: Path, data: Dict[str, Any]) -> None:
             tags["APIC"] = APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=c_d)
         tags.save(path)
 
+def _pending_cover_sidecar(path: Path) -> Path:
+    return Path(str(path) + ".cover_url")
+
+def _read_pending_cover_url(path: Path) -> str:
+    sidecar = _pending_cover_sidecar(path)
+    if not sidecar.exists():
+        return ""
+    try:
+        return sidecar.read_text(encoding="utf-8").strip()
+    except Exception:
+        return ""
+
+def _clear_pending_cover_url(path: Path) -> None:
+    try:
+        _pending_cover_sidecar(path).unlink(missing_ok=True)
+    except Exception:
+        pass
+
 def apply_manual_tags(song: Any, data: Dict[str, Any]) -> Any:
     from pathlib import Path
     from ..models import DownloadJob
@@ -267,6 +285,7 @@ def revert_song_to_original(song: Any) -> None:
     song.needs_tagging = False
     song.pending_confirmation = False
     song.save()
+    _clear_pending_cover_url(path)
     navidrome_rescan()
 
 def auto_tag_all_untagged() -> int:
@@ -334,8 +353,13 @@ def confirm_pending_tags(song_ids: Optional[List[int]] = None, job: Optional[Any
     count = 0
     for song in qs:
         try:
+            path = Path(song.filepath)
             data = {'title': song.title, 'artist': song.artist, 'album': song.album, 'album_artist': song.album_artist}
-            apply_manual_tags_to_file(Path(song.filepath), data)
+            cover_url = _read_pending_cover_url(path)
+            if cover_url:
+                data["cover_url"] = cover_url
+            apply_manual_tags_to_file(path, data)
+            _clear_pending_cover_url(path)
             song.pending_confirmation = False
             song.save()
             count += 1
@@ -355,6 +379,7 @@ def reject_pending_tags(song_ids: Optional[List[int]] = None, job: Optional[Any]
     
     count = 0
     for song in qs:
+        _clear_pending_cover_url(Path(song.filepath))
         song.pending_confirmation = False
         song.needs_tagging = True
         song.save()
