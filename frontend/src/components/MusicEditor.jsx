@@ -24,7 +24,7 @@ const fmt = (t) => {
 
 const HANDLE_HIT_PX = 14;
 
-export const MusicEditor = ({ config = {}, notify, onUpdate }) => {
+export const MusicEditor = ({ config = {}, notify, onUpdate, initialSong = null }) => {
   const { t } = useTranslation();
   const [songs, setSongs] = useState([]);
   const [total, setTotal] = useState(0);
@@ -89,6 +89,17 @@ export const MusicEditor = ({ config = {}, notify, onUpdate }) => {
   useEffect(() => {
     if (selectedSong && audioRef.current) audioRef.current.load();
   }, [selectedSong, previewInfo]);
+
+  // Select an externally chosen song (e.g. from library Trim button)
+  useEffect(() => {
+    if (!initialSong) return;
+    setSelectedSong(initialSong);
+    setPreviewInfo(null);
+    setStartTime(0);
+    setEndTime(0);
+    setCurrentTime(0);
+    setDragging(null);
+  }, [initialSong?.id]);
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
