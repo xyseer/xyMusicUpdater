@@ -229,6 +229,7 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <ScrollingText text={song.title || song.path?.split('/').pop() || '—'} style={{ fontSize: 13, fontWeight: 600, textDecoration: markedDelete ? 'line-through' : 'none', color: markedDelete ? 'var(--text-dim)' : 'var(--text)' }} />
                     <ScrollingText text={song.artist || '—'} style={{ fontSize: 11, color: 'var(--text-dim)' }} />
+                    <ScrollingText text={song.path || ''} style={{ fontSize: 10, color: 'var(--accent)', opacity: 0.7, fontFamily: 'monospace' }} />
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{fmt(song.duration)}</div>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${markedDelete ? 'var(--red)' : 'var(--green)'}`, background: markedDelete ? 'rgba(235,87,87,0.2)' : 'rgba(39,174,96,0.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
