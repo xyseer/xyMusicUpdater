@@ -150,6 +150,7 @@ def test_song_detail_view_delete(auth_client, tmp_path, mocker):
 
 @pytest.mark.django_db
 def test_get_config_returns_200(auth_client):
+    SystemConfig.objects.update_or_create(key="HOLD_PERIOD_DAYS", defaults={"value": "30"})
     r = auth_client.get("/api/config/")
     assert r.status_code == 200
     data = r.json()
@@ -163,16 +164,14 @@ def test_get_config_requires_auth(anon_client):
 
 
 @pytest.mark.django_db
-def test_update_config_persists_value(auth_client, mocker):
-    mocker.patch("core.api.config_views.apps.get_app_config")
+def test_update_config_persists_value(auth_client):
     r = auth_client.post("/api/config/update/", {"HOLD_PERIOD_DAYS": "45"}, format="json")
     assert r.status_code == 200
     assert SystemConfig.objects.filter(key="HOLD_PERIOD_DAYS", value="45").exists()
 
 
 @pytest.mark.django_db
-def test_update_config_skips_masked_value(auth_client, mocker):
-    mocker.patch("core.api.config_views.apps.get_app_config")
+def test_update_config_skips_masked_value(auth_client):
     SystemConfig.objects.update_or_create(key="NAVIDROME_PASSWORD", defaults={"value": "original"})
     auth_client.post("/api/config/update/", {"NAVIDROME_PASSWORD": "********"}, format="json")
     assert SystemConfig.objects.get(key="NAVIDROME_PASSWORD").value == "original"
@@ -239,7 +238,7 @@ def test_cleanup_history_view(auth_client):
 
 @pytest.mark.django_db
 def test_compilation_candidates_view_returns_200(auth_client, mocker):
-    mocker.patch("core.api.song_views.get_compilation_candidates", return_value=[])
+    mocker.patch("core.api.song_views.get_compilation_candidates", return_value={"results": [], "total": 0, "page": 1, "page_size": 50})
     r = auth_client.get("/api/compilation/candidates/")
     assert r.status_code == 200
     data = r.json()

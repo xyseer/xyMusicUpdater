@@ -7,7 +7,8 @@ from core.logic.editor import get_preview_dir, cleanup_previews, generate_trim_p
 
 # ── get_preview_dir ───────────────────────────────────────────────────────────
 
-def test_get_preview_dir_returns_path():
+def test_get_preview_dir_returns_path(mocker):
+    mocker.patch("pathlib.Path.mkdir")
     p = get_preview_dir()
     assert isinstance(p, Path)
 

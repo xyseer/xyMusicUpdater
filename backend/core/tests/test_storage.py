@@ -103,7 +103,7 @@ def test_get_upcoming_purges_finds_old_files(tmp_path, mocker):
         os.utime(f, (0, 0))  # epoch = definitely old
 
     mocker.patch("core.logic.storage._get_playlist_track_map", return_value={})
-    result = get_upcoming_purges(page=1, page_size=10)
+    result = get_upcoming_purges(candidates_page=1, page_size=10)
     assert result["candidates_total"] == 3
     assert len(result["candidates"]) == 3
 
@@ -122,11 +122,11 @@ def test_get_upcoming_purges_pagination(tmp_path, mocker):
 
     mocker.patch("core.logic.storage._get_playlist_track_map", return_value={})
 
-    p1 = get_upcoming_purges(page=1, page_size=4)
+    p1 = get_upcoming_purges(candidates_page=1, page_size=4)
     assert len(p1["candidates"]) == 4
     assert p1["candidates_total"] == 7
 
-    p2 = get_upcoming_purges(page=2, page_size=4)
+    p2 = get_upcoming_purges(candidates_page=2, page_size=4)
     assert len(p2["candidates"]) == 3
 
 
