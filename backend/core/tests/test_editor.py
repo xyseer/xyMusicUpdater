@@ -84,7 +84,8 @@ def test_cleanup_previews_handles_empty_dir(tmp_path, mocker):
 # ── generate_trim_preview ─────────────────────────────────────────────────────
 
 @pytest.mark.django_db
-def test_generate_trim_preview_returns_none_for_missing_song():
+def test_generate_trim_preview_returns_none_for_missing_song(mocker):
+    mocker.patch("core.logic.editor.cleanup_previews")
     result = generate_trim_preview(99999, "0", "30")
     assert result is None
 
