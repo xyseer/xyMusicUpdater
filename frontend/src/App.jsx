@@ -24,7 +24,7 @@ import { DuplicatesPanel } from './components/DuplicatesPanel';
 import { LoginPanel } from './components/LoginPanel';
 import { Toast } from './components/Toast';
 
-const VERSION_NUMBER = "1.2.1";
+const VERSION_NUMBER = "1.3.0";
 
 const layout = {
   container: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' },
@@ -70,6 +70,7 @@ const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isEventsOpen, setIsEventsOpen] = useState(window.innerWidth > 768);
   const [bgUrl, setBgUrl] = useState(null);
+  const [trimSong, setTrimSong] = useState(null);
 
   const abortControllerRef = useRef(null);
 
@@ -180,6 +181,11 @@ const App = () => {
     if (isMobile) setIsSidebarOpen(false);
   };
 
+  const handleTrimSong = (song) => {
+    setTrimSong(song);
+    navTo('editor');
+  };
+
   if (!session.checked) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0c' }}><Music size={48} color="var(--accent)" className="spin" /></div>;
   if (!session.user) return <LoginPanel onLogin={handleLogin} notify={showNotification} />;
 
@@ -263,7 +269,7 @@ const App = () => {
             <div style={{ ...layout.grid2, flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: 2 }}>
                 <div style={layout.sectionLabel}>Song Library</div>
-                <SongTable playlistMap={playlistMap} config={status?.config} notify={showNotification} />
+                <SongTable playlistMap={playlistMap} config={status?.config} notify={showNotification} onTrim={handleTrimSong} />
               </div>
               <div style={{ width: isMobile ? '100%' : 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {status?.config?.NAVIDROME_URL && (
@@ -297,7 +303,7 @@ const App = () => {
           {activeTab === 'purge' && <PurgePreview config={status?.config} />}
           {activeTab === 'compilation' && <CompilationMergePanel config={status?.config} onUpdate={refreshAll} notify={showNotification} />}
           {activeTab === 'duplicates' && <DuplicatesPanel notify={showNotification} config={status?.config} />}
-          {activeTab === 'editor' && <MusicEditor config={status?.config} notify={showNotification} onUpdate={refreshAll} />}
+          {activeTab === 'editor' && <MusicEditor config={status?.config} notify={showNotification} onUpdate={refreshAll} initialSong={trimSong} />}
           {activeTab === 'settings' && <SettingsPanel onUpdate={fetchStatus} notify={showNotification} onLogout={handleLogout} />}
         </section>
       </div>
