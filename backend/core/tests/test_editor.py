@@ -108,6 +108,7 @@ def test_generate_trim_preview_returns_none_on_ffmpeg_failure(tmp_path, mocker):
     mp3.write_bytes(b"\xff\xfb" + b"\0" * 100)
     song = Song.objects.create(filename="real.mp3", filepath=str(mp3))
 
+    mocker.patch("core.logic.editor.get_preview_dir", return_value=tmp_path)
     mocker.patch("core.logic.editor.cleanup_previews")
     mocker.patch("subprocess.run", side_effect=Exception("ffmpeg not found"))
 
