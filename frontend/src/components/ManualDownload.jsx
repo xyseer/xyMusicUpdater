@@ -10,6 +10,7 @@ export const ManualDownload = ({ onJobStarted, notify, config }) => {
   const [provider, setProvider] = useState(config?.DOWNLOAD_PROVIDER || 'youtube');
   const [allowPlaylist, setAllowPlaylist] = useState(false);
   const [overrideDuplicate, setOverrideDuplicate] = useState(false);
+  const [noPurge, setNoPurge] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -20,7 +21,7 @@ export const ManualDownload = ({ onJobStarted, notify, config }) => {
     e.preventDefault();
     if (!inputVal) return;
     if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
-      await api.manualDownload(inputVal, allowPlaylist, overrideDuplicate);
+      await api.manualDownload(inputVal, allowPlaylist, overrideDuplicate, noPurge);
       setInputVal('');
       setSearchResults([]);
       onJobStarted();
@@ -39,7 +40,7 @@ export const ManualDownload = ({ onJobStarted, notify, config }) => {
   };
 
   const triggerDownload = async (targetUrl, forcePlaylist = false) => {
-    await api.manualDownload(targetUrl, forcePlaylist || allowPlaylist, overrideDuplicate);
+    await api.manualDownload(targetUrl, forcePlaylist || allowPlaylist, overrideDuplicate, noPurge);
     setInputVal('');
     setSearchResults([]);
     onJobStarted();
@@ -123,6 +124,10 @@ export const ManualDownload = ({ onJobStarted, notify, config }) => {
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
               <input type="checkbox" checked={overrideDuplicate} onChange={(e) => setOverrideDuplicate(e.target.checked)} />
               {t('downloads.override_duplicate')}
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={noPurge} onChange={(e) => setNoPurge(e.target.checked)} />
+              {t('downloads.no_purge')}
             </label>
           </div>
         </form>

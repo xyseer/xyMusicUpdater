@@ -33,10 +33,11 @@ def manual_download(request):
     url = request.data.get("url")
     allow_playlist = request.data.get("allow_playlist", False)
     override_duplicate = request.data.get("override_duplicate", False)
+    no_purge = request.data.get("no_purge", False)
     if not url:
         return Response({"error": "URL required"}, status=400)
     job = DownloadJob.objects.create(job_type="manual", status="queued", created_at=dj_tz.now())
-    threading.Thread(target=_run_manual_job, args=(job.id, url, allow_playlist, override_duplicate), daemon=True).start()
+    threading.Thread(target=_run_manual_job, args=(job.id, url, allow_playlist, override_duplicate, no_purge), daemon=True).start()
     return Response(DownloadJobSerializer(job).data, status=201)
 
 @api_auth_required
@@ -52,7 +53,7 @@ def search_media_view(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False):
+def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False, no_purge=False):
     try:
         job = DownloadJob.objects.get(pk=job_id)
         job.status = "running"
@@ -62,6 +63,9 @@ def _run_manual_job(job_id, url, allow_playlist, override_duplicate=False):
         # One incremental rescan fires here after the whole job completes.
         files = download_url(url, job=job, allow_playlist=allow_playlist, override_duplicate=override_duplicate)
         if files:
+            if no_purge:
+                from ..models import Song
+                Song.objects.filter(jobs=job).update(no_purge=True)
             navidrome_rescan(job=job, full_scan=False)
         job.status = "done"
         job.finished_at = dj_tz.now()
