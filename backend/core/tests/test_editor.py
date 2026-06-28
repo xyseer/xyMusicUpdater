@@ -7,7 +7,8 @@ from core.logic.editor import get_preview_dir, cleanup_previews, generate_trim_p
 
 # ── get_preview_dir ───────────────────────────────────────────────────────────
 
-def test_get_preview_dir_returns_path():
+def test_get_preview_dir_returns_path(mocker):
+    mocker.patch("pathlib.Path.mkdir")
     p = get_preview_dir()
     assert isinstance(p, Path)
 
@@ -83,7 +84,8 @@ def test_cleanup_previews_handles_empty_dir(tmp_path, mocker):
 # ── generate_trim_preview ─────────────────────────────────────────────────────
 
 @pytest.mark.django_db
-def test_generate_trim_preview_returns_none_for_missing_song():
+def test_generate_trim_preview_returns_none_for_missing_song(mocker):
+    mocker.patch("core.logic.editor.cleanup_previews")
     result = generate_trim_preview(99999, "0", "30")
     assert result is None
 
@@ -107,6 +109,7 @@ def test_generate_trim_preview_returns_none_on_ffmpeg_failure(tmp_path, mocker):
     mp3.write_bytes(b"\xff\xfb" + b"\0" * 100)
     song = Song.objects.create(filename="real.mp3", filepath=str(mp3))
 
+    mocker.patch("core.logic.editor.get_preview_dir", return_value=tmp_path)
     mocker.patch("core.logic.editor.cleanup_previews")
     mocker.patch("subprocess.run", side_effect=Exception("ffmpeg not found"))
 
