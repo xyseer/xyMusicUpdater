@@ -23,7 +23,7 @@ jobs:
     # Environment-scoped secrets. Set "Deployment branch and tag rules" on this
     # environment to `v*.*.*` so DOCKERHUB_* are only ever exposed to tag runs.
     # Rename to match the Environment you created in repo Settings → Environments.
-    environment: dockerhub
+    environment: deploy
     steps:
       - uses: actions/checkout@v4
 
