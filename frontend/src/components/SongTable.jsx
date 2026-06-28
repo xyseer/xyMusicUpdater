@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ShieldCheck, ChevronDown, ChevronRight, Archive, ChevronLeft, Trash2, Tag } from 'lucide-react';
+import { ShieldCheck, ChevronDown, ChevronRight, Archive, ChevronLeft, Trash2, Tag, Scissors, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScrollingText } from './ScrollingText';
 import { api } from '../api';
 import { useIsMobile } from '../hooks/useIsMobile';
 
-export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
+export const SongTable = ({ playlistMap = {}, config = {}, notify, onTrim }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [songs, setSongs] = useState([]);
@@ -14,15 +14,28 @@ export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
   const [statusFilter, setStatusFilter] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const abortControllerRef = useRef(null);
+  const searchTimerRef = useRef(null);
   const configReady = config.DEFAULT_PAGE_SIZE !== undefined;
   const pageSize = parseInt(config.DEFAULT_PAGE_SIZE || 50);
 
-  const fetchPage = useCallback(async (page, status, signal) => {
+  // Debounce search input by 400ms
+  useEffect(() => {
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setActivePage(1);
+    }, 400);
+    return () => clearTimeout(searchTimerRef.current);
+  }, [searchQuery]);
+
+  const fetchPage = useCallback(async (page, status, signal, search) => {
     setIsLoading(true);
     try {
-      const res = await api.getSongs(signal, status, page, pageSize);
+      const res = await api.getSongs(signal, status, page, pageSize, search);
       setSongs(res.results || []);
       setTotal(res.total || 0);
     } catch (e) {
@@ -36,9 +49,9 @@ export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
     if (!configReady) return;
     if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
-    fetchPage(activePage, statusFilter, abortControllerRef.current.signal);
+    fetchPage(activePage, statusFilter, abortControllerRef.current.signal, debouncedSearch);
     return () => abortControllerRef.current?.abort();
-  }, [activePage, statusFilter, fetchPage, configReady]);
+  }, [activePage, statusFilter, fetchPage, configReady, debouncedSearch]);
 
   const handleDelete = async (id) => {
     try {
@@ -99,7 +112,12 @@ export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
             ))}
           </div>
           {song.status !== 'moved' && (
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {onTrim && (
+                <button onClick={() => onTrim(song)} style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid #888', background: 'transparent', color: '#ccc', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Scissors size={11} /> {t('song_table.trim')}
+                </button>
+              )}
               <button onClick={() => handleRetag(song.id)} style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Tag size={11} /> {t('song_table.retag')}
               </button>
@@ -136,6 +154,11 @@ export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
         <td style={tdStyle}>{song.source}</td>
         {song.status !== 'moved' && (
           <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+            {onTrim && (
+              <button onClick={() => onTrim(song)} style={{ padding: '3px 8px', marginRight: 4, borderRadius: 4, border: '1px solid #888', background: 'transparent', color: '#ccc', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Scissors size={11} /> {t('song_table.trim')}
+              </button>
+            )}
             <button onClick={() => handleRetag(song.id)} style={{ padding: '3px 8px', marginRight: 4, borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <Tag size={11} /> {t('song_table.retag')}
             </button>
@@ -185,8 +208,21 @@ export const SongTable = ({ playlistMap = {}, config = {}, notify }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ background: 'var(--surface2)', borderRadius: 8, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 12, fontWeight: 700 }}>{t('library.song_library')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, maxWidth: 280, border: '1px solid var(--border)', borderRadius: 4, padding: '4px 10px', background: '#1c1c21' }}>
+            <Search size={12} color="var(--text-dim)" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder={t('song_table.search_placeholder')}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 12, width: '100%', outline: 'none' }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
+            )}
+          </div>
           {statusFilter !== 'active' && (
             <button onClick={() => { setStatusFilter('active'); setActivePage(1); }} style={{ fontSize: 10, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>Back to Active</button>
           )}
