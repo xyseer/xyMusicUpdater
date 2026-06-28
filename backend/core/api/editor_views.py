@@ -20,9 +20,10 @@ def stream_song_view(request, pk):
     preview_path_str = request.query_params.get("preview_path")
     if preview_path_str:
         path = Path(preview_path_str)
-        # Security: ensure path is inside previews folder
         allowed_prefix = get_preview_dir()
-        if not str(path).startswith(str(allowed_prefix)):
+        try:
+            path.resolve().relative_to(allowed_prefix.resolve())
+        except ValueError:
             return HttpResponse("Forbidden", status=403)
     else:
         try:
@@ -63,10 +64,11 @@ def confirm_trim_view(request, pk):
     if not preview_path_str:
         return Response({"error": "No preview path provided"}, status=400)
     
-    # Security: ensure path is inside previews folder
     path = Path(preview_path_str)
     allowed_prefix = get_preview_dir()
-    if not str(path).startswith(str(allowed_prefix)):
+    try:
+        path.resolve().relative_to(allowed_prefix.resolve())
+    except ValueError:
         return Response({"error": "Forbidden"}, status=403)
         
     success = finalize_trim(pk, preview_path_str)

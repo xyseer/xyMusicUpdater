@@ -97,24 +97,25 @@ describe('useSSE hook', () => {
     expect(result.current.isLive).toBe(false)
   })
 
-  it('retries after error with 5s delay', () => {
+  it('retries after error once delay elapses', () => {
     renderHook(() => useSSE('admin', () => {}))
     expect(MockEventSource.instances.length).toBe(1)
     act(() => {
       MockEventSource.instances[0].onerror?.()
-      vi.advanceTimersByTime(5000)
+      vi.advanceTimersByTime(16000) // first retry delay is ≤15 000 ms
     })
     expect(MockEventSource.instances.length).toBe(2)
   })
 
-  it('calls onPermanentFailure after 10 retries', () => {
+  it('calls onPermanentFailure after MAX_RETRIES (8) retries', () => {
     const onFail = vi.fn()
     renderHook(() => useSSE('admin', onFail))
     act(() => {
-      for (let i = 0; i < 10; i++) {
+      // 8 errors → 8 retries; 9th error → permanent failure
+      for (let i = 0; i < 9; i++) {
         const last = MockEventSource.instances[MockEventSource.instances.length - 1]
         last.onerror?.()
-        vi.advanceTimersByTime(5000)
+        vi.advanceTimersByTime(16000) // advance past the longest possible retry delay
       }
     })
     expect(onFail).toHaveBeenCalledTimes(1)

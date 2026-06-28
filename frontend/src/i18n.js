@@ -136,6 +136,7 @@ const resources = {
         "search": "Search",
         "enable_playlist": "Enable whole playlist download",
         "override_duplicate": "Force download (ignore duplicates)",
+        "no_purge": "Archive on purge (never auto-delete)",
         "fetch": "Fetch",
         "fetch_mix": "Fetch Mix",
         "automated_discovery": "Automated Discovery",
@@ -206,9 +207,11 @@ const resources = {
         "source": "Source",
         "actions": "Actions",
         "retag": "Re-tag",
+        "trim": "Trim",
         "delete": "Delete",
         "no_active": "No active songs.",
-        "archived_songs": "ARCHIVED SONGS"
+        "archived_songs": "ARCHIVED SONGS",
+        "search_placeholder": "Search title, artist or filename..."
       },
       "scheduler": {
         "title": "Background Tasks",
@@ -236,7 +239,10 @@ const resources = {
         "main_pipeline_config": "Main Pipeline Interval",
         "type_pipeline": "Pipeline",
         "type_discovery": "Discovery",
-        "no_upcoming": "No tasks scheduled for the next 7 days."
+        "no_upcoming": "No tasks scheduled for the next 7 days.",
+        "maintenance_title": "System Maintenance",
+        "every_n_days": "Every {{n}} days",
+        "ytdlp_update_desc": "Installs the latest yt-dlp binary. Container restarts automatically when a new version is found, staying ahead of yt-dlp's 90-day forced expiry."
       }
     }
   },
@@ -373,6 +379,7 @@ const resources = {
         "search": "搜索",
         "enable_playlist": "启用整个播放列表下载",
         "override_duplicate": "强制下载 (忽略重复)",
+        "no_purge": "归档保留（永不自动删除）",
         "fetch": "抓取",
         "fetch_mix": "抓取推荐歌单",
         "automated_discovery": "自动发现任务",
@@ -443,9 +450,11 @@ const resources = {
         "source": "来源",
         "actions": "操作",
         "retag": "重新标记",
+        "trim": "剪辑",
         "delete": "删除",
         "no_active": "没有活跃的歌曲。",
-        "archived_songs": "已存档的歌曲"
+        "archived_songs": "已存档的歌曲",
+        "search_placeholder": "按标题、艺术家或文件名搜索..."
       },
       "scheduler": {
         "title": "后台任务",
@@ -473,7 +482,10 @@ const resources = {
         "main_pipeline_config": "主工作流执行间隔",
         "type_pipeline": "工作流",
         "type_discovery": "发现任务",
-        "no_upcoming": "未来 7 天内没有计划任务。"
+        "no_upcoming": "未来 7 天内没有计划任务。",
+        "maintenance_title": "系统维护",
+        "every_n_days": "每 {{n}} 天",
+        "ytdlp_update_desc": "自动安装最新版 yt-dlp。发现新版本后容器将自动重启，确保在 yt-dlp 90 天强制过期前完成更新。"
       }
     }
   },
@@ -611,6 +623,7 @@ const resources = {
         "search": "検索",
         "enable_playlist": "プレイリスト全体のダウンロードを有効にする",
         "override_duplicate": "強制ダウンロード (重複を無視)",
+        "no_purge": "パージ時アーカイブ（自動削除しない）",
         "fetch": "取得",
         "fetch_mix": "Mixを取得",
         "automated_discovery": "自動検出タスク",
@@ -681,9 +694,11 @@ const resources = {
         "source": "ソース",
         "actions": "操作",
         "retag": "再タグ付け",
+        "trim": "トリム",
         "delete": "削除",
         "no_active": "アクティブな曲はありません。",
-        "archived_songs": "アーカイブ済みの曲"
+        "archived_songs": "アーカイブ済みの曲",
+        "search_placeholder": "タイトル・アーティスト・ファイル名で検索..."
       },
       "scheduler": {
         "title": "バックグラウンドタスク",
@@ -711,7 +726,10 @@ const resources = {
         "main_pipeline_config": "メインパイプラインの間隔",
         "type_pipeline": "パイプライン",
         "type_discovery": "自動検出",
-        "no_upcoming": "今後7日間にスケジュールされたタスクはありません。"
+        "no_upcoming": "今後7日間にスケジュールされたタスクはありません。",
+        "maintenance_title": "システムメンテナンス",
+        "every_n_days": "{{n}} 日ごと",
+        "ytdlp_update_desc": "最新の yt-dlp バイナリをインストールします。新バージョン検出時にコンテナが自動再起動し、90日強制期限切れを回避します。"
       }
     }
   }

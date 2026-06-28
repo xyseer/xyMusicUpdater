@@ -163,6 +163,14 @@ def song_detail_view(request, pk):
         except Exception as e: return Response({"error": str(e)}, status=400)
     if request.method == "DELETE":
         path = Path(song.filepath)
+        cfg = _cfg()
+        perm_dir = Path(cfg.get("PERMANENT_SAVING_DIR", "/music/permanent")).resolve()
+        try:
+            in_permanent = path.resolve().is_relative_to(perm_dir)
+        except Exception:
+            in_permanent = True  # safe default: block deletion when path check fails
+        if in_permanent:
+            return Response({"error": "Cannot delete a file in the permanent archive folder."}, status=403)
         path.unlink(missing_ok=True)
         path.with_suffix(".info.json").unlink(missing_ok=True)
         _delete_from_navidrome_db(path)

@@ -29,7 +29,12 @@ def cleanup_previews(preview_path_str: Optional[str] = None, force_all: bool = F
 
     if preview_path_str:
         p = Path(preview_path_str)
-        if p.exists() and str(p).startswith(str(temp_dir)):
+        try:
+            p.resolve().relative_to(temp_dir.resolve())
+            inside = True
+        except ValueError:
+            inside = False
+        if inside and p.exists():
             try: p.unlink()
             except: pass
     else:

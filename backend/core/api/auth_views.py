@@ -59,7 +59,7 @@ def login_view(request):
         login(request, user)
         return Response({"status": "ok", "user": user.username})
     
-    print(f"Login failed for user '{username}'. Input len: {len(password) if password else 0}, Expected len: {len(env_pass)}")
+    print(f"Login failed for user '{username}'.")
     return Response({"error": "Invalid credentials"}, status=401)
 
 @csrf_exempt
