@@ -6,3 +6,4 @@ from .tagger import _read_basic_tags, search_musicbrainz_api, apply_manual_tags,
 from .discovery import run_single_subscription, run_search_subscriptions
 from .pipeline import fetch_all_sources, register_songs, run_pipeline, retry_interrupted_jobs
 from .editor import generate_trim_preview, finalize_trim, cleanup_previews, get_preview_dir
+from .updater import update_ytdlp

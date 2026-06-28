@@ -52,9 +52,9 @@ class CoreConfig(AppConfig):
     def start_scheduler(self):
         from apscheduler.schedulers.background import BackgroundScheduler
         from .tasks import scheduled_pipeline
-        from .logic import run_single_subscription, _cfg
+        from .logic import run_single_subscription, _cfg, update_ytdlp
         from .models import SearchSubscription
-        
+
         if self._scheduler:
             try:
                 self._scheduler.shutdown()
@@ -62,13 +62,13 @@ class CoreConfig(AppConfig):
 
         self._scheduler = BackgroundScheduler()
         cfg = _cfg()
-        
+
         # 1. Main Pipeline (Cron)
-        interval_main = int(cfg.get("DAEMON_INTERVAL_HOURS", 24)) 
+        interval_main = int(cfg.get("DAEMON_INTERVAL_HOURS", 24))
         self._scheduler.add_job(
-            scheduled_pipeline, 
-            'interval', 
-            hours=interval_main, 
+            scheduled_pipeline,
+            'interval',
+            hours=interval_main,
             id='music_pipeline',
             name='Main Music Pipeline',
             replace_existing=True
@@ -86,6 +86,16 @@ class CoreConfig(AppConfig):
                 args=[sub.id],
                 replace_existing=True
             )
+
+        # 3. yt-dlp Auto-Update — every 30 days; stays ahead of yt-dlp's 90-day expiry
+        self._scheduler.add_job(
+            update_ytdlp,
+            'interval',
+            days=30,
+            id='ytdlp_update',
+            name='yt-dlp Auto-Update',
+            replace_existing=True,
+        )
 
         self._scheduler.start()
 

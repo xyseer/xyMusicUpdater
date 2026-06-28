@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api';
-import { Play, Clock, Settings, RefreshCw, Calendar, Search } from 'lucide-react';
+import { Play, Clock, Settings, RefreshCw, Calendar, Search, Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const jobCardStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: 16, borderRadius: 6, border: '1px solid var(--border)', marginBottom: 12 };
@@ -13,6 +13,7 @@ const infoBoxStyle = { background: 'rgba(155,81,224,0.05)', border: '1px solid v
 export const SchedulerPanel = ({ config, onUpdate, notify }) => {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
+  const [maintenanceJobs, setMaintenanceJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isTriggering, setIsTriggering] = useState(null);
   const [customMode, setCustomMode] = useState(false);
@@ -21,8 +22,12 @@ export const SchedulerPanel = ({ config, onUpdate, notify }) => {
     setLoading(true);
     try {
       const data = await api.getSchedulerInfo();
-      setEvents(data);
-      
+      // API returns { events, maintenance_jobs } — fall back to bare array for safety
+      const evts = Array.isArray(data) ? data : (data.events || []);
+      const maint = Array.isArray(data) ? [] : (data.maintenance_jobs || []);
+      setEvents(evts);
+      setMaintenanceJobs(maint);
+
       const presets = ["1", "2", "6", "12", "24", "48"];
       if (!presets.includes(String(config.DAEMON_INTERVAL_HOURS))) setCustomMode(true);
     } catch (e) {
@@ -147,6 +152,51 @@ export const SchedulerPanel = ({ config, onUpdate, notify }) => {
           </div>
         )}
       </div>
+
+      {/* 3. System Maintenance Jobs */}
+      {maintenanceJobs.length > 0 && (
+        <div style={{ background: 'var(--surface2)', padding: 20, borderRadius: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <Wrench size={18} color="var(--accent)" />
+            <h3 style={{ margin: 0 }}>{t('scheduler.maintenance_title')}</h3>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {maintenanceJobs.map(job => (
+              <div key={job.id} style={jobCardStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ ...iconBoxStyle, background: 'rgba(255,165,0,0.1)' }}>
+                    <Wrench size={16} color="orange" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{job.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                      {job.interval_days != null
+                        ? t('scheduler.every_n_days', { n: job.interval_days })
+                        : '—'}
+                      {job.next_run && (
+                        <span style={{ marginLeft: 8 }}>
+                          • {t('scheduler.next_run')} {new Date(job.next_run).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2, opacity: 0.75 }}>
+                      {t('scheduler.ytdlp_update_desc')}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleTrigger(job.id)}
+                  disabled={isTriggering === job.id}
+                  style={{ ...triggerBtnStyle, background: 'orange' }}
+                >
+                  <Play size={14} style={{ marginRight: 8 }} />
+                  {isTriggering === job.id ? '...' : t('scheduler.run_now')}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={infoBoxStyle}>
         <div style={{ fontWeight: 800, fontSize: 11, marginBottom: 8, color: 'var(--accent)' }}>{t('scheduler.logic_title')}</div>

@@ -183,7 +183,7 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
     # Fetch 3× more candidates than needed so smart sort + blacklist/duplicate filtering
     # can still reach the target quota after items are removed from the pool.
     fetch_limit = min(max_items * 3, 150)
-    cmd_meta = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(fetch_limit)]
+    cmd_meta = ["yt-dlp", "--remote-components", "ejs:github", "--flat-playlist", "--dump-json", "--playlist-end", str(fetch_limit)]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None
@@ -278,7 +278,7 @@ def _ytdlp_download(url: str, dest: Path, label: str, max_items: int = 10, job: 
 
     for title, vid, video_id, _upload_date, uploader, source_metadata in targets:
         emit(f"Downloading: {title}", job=job)
-        cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
+        cmd = ["yt-dlp", "--remote-components", "ejs:github", "--no-playlist", "-x", "--audio-format", "mp3", "--audio-quality", "0", "--no-mtime", "--no-overwrites", "--no-part", "--add-metadata", "--embed-thumbnail", "--output", output_tpl]
         
         if cookies_raw:
             if cookies_file and cookies_file.exists():
