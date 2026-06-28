@@ -48,6 +48,7 @@ class Song(models.Model):
     status: models.CharField = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     needs_tagging: models.BooleanField = models.BooleanField(default=False)
     pending_confirmation: models.BooleanField = models.BooleanField(default=False)
+    no_purge: models.BooleanField = models.BooleanField(default=False)
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     deleted_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
     jobs: models.ManyToManyField = models.ManyToManyField(DownloadJob, related_name='songs_added')

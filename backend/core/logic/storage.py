@@ -63,20 +63,35 @@ def purge_oldest_songs(job: Optional[Any] = None) -> None:
         if is_protected:
             if db_s and not db_s.needs_tagging and not db_s.pending_confirmation:
                 new_p = perm / f.name
-                try: 
+                try:
                     old_p_str, new_p_str = str(f), str(new_p)
                     if not new_p.exists():
                         shutil.move(old_p_str, new_p_str)
                         _sync_navidrome_metadata(old_p_str, new_p_str, {'title':db_s.title,'artist':db_s.artist,'album':db_s.album,'album_artist':db_s.album_artist})
                         emit(f"Archived protected song: {f.name}", job=job)
-                    if db_s: 
+                    if db_s:
                         db_s.status = 'moved'
                         db_s.filepath = new_p_str
                         db_s.save()
                 except Exception as e:
                     emit(f"Archive error: {e}", level="error", job=job)
             continue
-            
+
+        if db_s and db_s.no_purge:
+            new_p = perm / f.name
+            try:
+                old_p_str, new_p_str = str(f), str(new_p)
+                if not new_p.exists():
+                    shutil.move(old_p_str, new_p_str)
+                    _sync_navidrome_metadata(old_p_str, new_p_str, {'title': db_s.title, 'artist': db_s.artist, 'album': db_s.album, 'album_artist': db_s.album_artist})
+                    emit(f"Archived (no-purge): {f.name}", job=job)
+                db_s.status = 'moved'
+                db_s.filepath = new_p_str
+                db_s.save()
+            except Exception as e:
+                emit(f"Archive error (no-purge): {e}", level="error", job=job)
+            continue
+
         if (now - f.stat().st_mtime) > hold_sec:
             emit(f"Deleting: {f.name}", job=job, event_type="purge_delete")
             f.unlink(missing_ok=True)
@@ -129,6 +144,13 @@ def get_upcoming_purges(candidates_page: int = 1, protected_page: int = 1, page_
                 "filename": f.name,
                 "playlists": list(matched_pls),
                 "match_reason": "Ready to Archive" if (db_s and not db_s.needs_tagging) else "Protected but Untagged"
+            })
+            continue
+        if db_s and db_s.no_purge:
+            protected.append({
+                "filename": f.name,
+                "playlists": [],
+                "match_reason": "No-Purge (will archive)"
             })
             continue
         if (now - f.stat().st_mtime) > hold_sec:
