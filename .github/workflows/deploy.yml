@@ -5,7 +5,7 @@ name: Deploy
 # reach this workflow — they only run CI.
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ['V*.*.*']
 
 jobs:
   # 1) Re-run the full CI suite (reusable workflow) against the tagged commit.
