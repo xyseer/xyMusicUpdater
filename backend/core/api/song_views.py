@@ -110,13 +110,21 @@ def songs_view(request):
     except (ValueError, TypeError):
         page, page_size = 1, 50
 
+    search = request.query_params.get("search", "").strip()
+
     qs = Song.objects.all().order_by("-created_at")
     if status_filter == "pending":
         from django.db.models import Q
         qs = qs.filter(Q(needs_tagging=True) | Q(pending_confirmation=True)).filter(status="active")
     elif status_filter:
         qs = qs.filter(status=status_filter)
-    
+
+    if search:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(title__icontains=search) | Q(artist__icontains=search) | Q(filename__icontains=search)
+        )
+
     total = qs.count()
     start = (page - 1) * page_size
     end = start + page_size
