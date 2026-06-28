@@ -2,7 +2,24 @@
 
 ---
 
-## [1.2.1] — 2026-06-01
+## [1.3.0]
+
+### Features
+- **SoundCloud Provider**(by [WorldVanquisher](https://github.com/WorldVanquisher)) — SoundCloud added as a first-class download and search source alongside YouTube; SoundCloud URLs auto-detected in Manual Download and Discovery; search results display provider badge.
+- **yt-dlp Auto-Update** — Scheduler-based binary self-update every 30 days: downloads the latest `yt-dlp` release from GitHub, to avoid expire.
+- **No-Purge Archive Option** — New per-song `no_purge` flag . Songs marked "No Purge" are moved to the permanent archive folder instead of being deleted when purge.
+- **Wildcard Search in Library** — Library tab search field supports free-text matching across `title`, `artist`, and `filename` fields with server-side filtering.
+- **Trim Button in Library** — Each Library row now has a direct "Trim" button that switches to the Music Editor tab with that song pre-selected.
+- **File Path in Duplicate Groups** — Each song card in the Duplicates panel now shows its full filesystem path, making it easy to distinguish copies in different directories before deleting.
+
+### Fixes
+- **Delete path guard** (`duplicates.py`, `song_views.py`) — Deletion in both the Duplicates panel and the Library now resolves the full path before comparing against `PERMANENT_SAVING_DIR`, preventing accidental deletion of archived files.
+- **useSSE retry assertions** (frontend tests) — Corrected retry-delay and retry-count assertions in `useSSE.test.js` to match the actual 5 s / 10-retry behaviour.
+- **Deno Runtime Fixed** — `deno` installed in the image as the JavaScript runtime for yt-dlp.
+
+---
+
+## [1.2.1]
 
 ### Fixes
 - **Compilation candidates** — Albums merged to any custom album artist (not just "Various Artists") are now correctly excluded from suggestions; fixed logically-impossible SQL condition that was always `false`.
