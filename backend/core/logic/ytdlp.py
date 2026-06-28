@@ -395,7 +395,7 @@ def search_media(query: str, limit: int = 10, provider: Optional[str] = None) ->
         return search_soundcloud(query, limit=limit)
 
     prefix = _search_prefix(provider)
-    cmd = ["yt-dlp", "--js-runtimes", "node", "--remote-components", "ejs:github", "--dump-json", "--flat-playlist", f"{prefix}{limit}:{query}"]
+    cmd = ["yt-dlp", "--remote-components", "ejs:github", "--dump-json", "--flat-playlist", f"{prefix}{limit}:{query}"]
     
     cookies_raw = cfg.get("YTDLP_COOKIES", "").strip()
     cookies_file = None

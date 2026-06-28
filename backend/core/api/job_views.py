@@ -94,12 +94,13 @@ def upload_songs_view(request):
     temp.mkdir(parents=True, exist_ok=True)
     saved_paths = []
     for f in files:
-        ext = Path(f.name).suffix.lower()
+        safe_name = Path(f.name).name  # strip any directory traversal components
+        ext = Path(safe_name).suffix.lower()
         if ext not in _UPLOAD_ALLOWED_EXTS:
             continue
-        dest = temp / f.name
+        dest = temp / safe_name
         if dest.exists():
-            dest = temp / f"{dest.stem}_upload{ext}"
+            dest = temp / f"{Path(safe_name).stem}_upload{ext}"
         with open(dest, 'wb+') as out:
             for chunk in f.chunks():
                 out.write(chunk)

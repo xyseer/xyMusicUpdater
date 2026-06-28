@@ -127,13 +127,23 @@ def navidrome_rescan(job: Optional[Any] = None, full_scan: bool = False) -> bool
     return True
 
 def _delete_from_navidrome_db(file_path: Path) -> None:
+    """Delete exactly one record matching the resolved path — never by filename glob."""
     db_path = "/navidrome_data/navidrome.db"
     if not os.path.exists(db_path):
         return
     try:
+        cfg = _cfg()
+        music_root = cfg.get("NAVIDROME_MUSIC_ROOT", "/music").rstrip("/")
+        abs_str = str(file_path)
+        # Navidrome stores paths relative to the music root
+        if abs_str.startswith(music_root + "/"):
+            rel_path = abs_str[len(music_root) + 1:]
+        else:
+            rel_path = abs_str.lstrip("/")
         with sqlite3.connect(db_path, timeout=10) as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM media_file WHERE path = ? OR path LIKE ?", (str(file_path).replace("/music/",""), f"%{file_path.name}"))
+            # Match only the exact relative path — never use LIKE to avoid cross-folder collisions
+            cursor.execute("DELETE FROM media_file WHERE path = ?", (rel_path,))
             conn.commit()
     except Exception:
         pass

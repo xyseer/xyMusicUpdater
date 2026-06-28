@@ -1,3 +1,4 @@
+import ast
 import difflib
 import json
 from pathlib import Path
@@ -11,7 +12,7 @@ from .tagger import _read_basic_tags, fingerprint_match, search_musicbrainz_api
 
 def fetch_all_sources(job: Optional[Any] = None) -> List[Path]:
     cfg = _cfg()
-    sources = eval(cfg["SOURCES"]) if isinstance(cfg["SOURCES"], str) else cfg["SOURCES"]
+    sources = ast.literal_eval(cfg["SOURCES"]) if isinstance(cfg["SOURCES"], str) else cfg["SOURCES"]
     temp = Path(cfg["TEMP_FOLDER"])
     temp.mkdir(parents=True, exist_ok=True)
     all_files = []

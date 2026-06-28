@@ -245,13 +245,25 @@ def delete_songs(nd_ids: List[str]) -> int:
     state = get_scan_state()
     path_map = {s["nd_id"]: s["path"] for g in state.get("groups", []) for s in g["songs"]}
     nd_db = "/navidrome_data/navidrome.db"
+
+    cfg = _cfg()
+    perm_dir = Path(cfg.get("PERMANENT_SAVING_DIR", "/music/permanent")).resolve()
+
     deleted = 0
 
     for nd_id in nd_ids:
         file_path = path_map.get(nd_id)
         if file_path:
+            p = Path(file_path)
             try:
-                Path(file_path).unlink(missing_ok=True)
+                in_permanent = p.resolve().is_relative_to(perm_dir)
+            except Exception:
+                in_permanent = True  # safe default: block deletion when path check fails
+            if in_permanent:
+                emit(f"Skipped permanent file: {p.name}", level="warning")
+                continue
+            try:
+                p.unlink(missing_ok=True)
             except Exception:
                 pass
         if os.path.exists(nd_db):

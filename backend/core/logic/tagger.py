@@ -7,9 +7,30 @@ import requests
 import musicbrainzngs
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 from django.utils import timezone as dj_tz
 from .utils import _cfg, emit, _sanitize_filename, _clean_query, _score_title_match
 from .navidrome import navidrome_rescan, _sync_navidrome_metadata
+
+_PRIVATE_PREFIXES = (
+    "localhost", "127.", "0.0.0.0", "::1", "[::1]",
+    "10.", "192.168.", "169.254.",
+    "172.16.", "172.17.", "172.18.", "172.19.", "172.20.",
+    "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
+    "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
+)
+
+def _is_safe_cover_url(url: str) -> bool:
+    """Block SSRF: only allow public HTTP/HTTPS cover art URLs."""
+    try:
+        p = urlparse(url)
+    except Exception:
+        return False
+    if p.scheme not in ("http", "https"):
+        return False
+    host = (p.hostname or "").lower()
+    return not any(host == pfx.rstrip(".") or host.startswith(pfx) for pfx in _PRIVATE_PREFIXES)
+
 
 def fingerprint_match(path: Path) -> Optional[Dict[str, Any]]:
     """Identify an audio file via AcoustID fingerprinting (fpcalc + acoustid.org).
@@ -181,7 +202,7 @@ def apply_manual_tags_to_file(path: Path, data: Dict[str, Any]) -> None:
             if c_u.startswith("data:image"):
                 _, enc = c_u.split(",", 1)
                 c_d = base64.b64decode(enc)
-            else:
+            elif _is_safe_cover_url(c_u):
                 r = requests.get(c_u, timeout=10)
                 c_d = r.content if r.status_code == 200 else None
         except Exception:
