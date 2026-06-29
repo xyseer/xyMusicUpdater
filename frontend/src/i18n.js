@@ -39,7 +39,10 @@ const resources = {
         "confirm_yes": "Confirm Delete",
         "cancel": "Cancel",
         "none_selected": "No songs selected for deletion",
-        "deleted": "Deleted {{count}} song(s)"
+        "deleted": "Deleted {{count}} song(s)",
+        "not_duplicate": "Not Duplicate",
+        "not_duplicate_confirm": "Mark all songs in this group as never-duplicate? They will be permanently excluded from future scans.",
+        "not_duplicate_done": "Marked as not duplicate"
       },
       "editor": {
         "title": "Music Editor",
@@ -282,7 +285,10 @@ const resources = {
         "confirm_yes": "确认删除",
         "cancel": "取消",
         "none_selected": "未选中任何曲目",
-        "deleted": "已删除 {{count}} 首"
+        "deleted": "已删除 {{count}} 首",
+        "not_duplicate": "非重复",
+        "not_duplicate_confirm": "将此组中所有歌曲标记为永不重复？它们将永久排除在未来扫描之外。",
+        "not_duplicate_done": "已标记为非重复"
       },
       "editor": {
         "title": "音乐剪辑器",
@@ -526,7 +532,10 @@ const resources = {
         "confirm_yes": "削除確定",
         "cancel": "キャンセル",
         "none_selected": "削除対象が選択されていません",
-        "deleted": "{{count}} 曲を削除しました"
+        "deleted": "{{count}} 曲を削除しました",
+        "not_duplicate": "重複ではない",
+        "not_duplicate_confirm": "このグループのすべての曲を「重複なし」としてマークしますか？今後のスキャンから永久に除外されます。",
+        "not_duplicate_done": "重複なしとしてマークしました"
       },
       "editor": {
         "title": "ミュージックエディタ",

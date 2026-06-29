@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .decorators import api_auth_required
 from ..models import DownloadJob
-from ..logic.duplicates import get_scan_state, scan_duplicates, dismiss_group, delete_songs
+from ..logic.duplicates import get_scan_state, scan_duplicates, dismiss_group, delete_songs, mark_not_duplicate
 
 @api_auth_required
 @api_view(["GET"])
@@ -81,3 +81,16 @@ def duplicates_delete_view(request):
     if not nd_ids:
         return Response({"error": "nd_ids required"}, status=400)
     return Response({"deleted": delete_songs(nd_ids)})
+
+@api_auth_required
+@api_view(["POST"])
+def duplicates_not_duplicate_view(request):
+    nd_ids = request.data.get("nd_ids", [])
+    if len(nd_ids) < 2:
+        return Response({"error": "at least 2 nd_ids required"}, status=400)
+    mark_not_duplicate(nd_ids)
+    # Remove this group from the current scan state so it disappears immediately
+    group_id = request.data.get("group_id")
+    if group_id:
+        dismiss_group(group_id)
+    return Response({"ok": True})

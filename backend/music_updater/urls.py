@@ -52,6 +52,7 @@ urlpatterns = [
     path('api/duplicates/status/', views.duplicates_status_view),
     path('api/duplicates/dismiss/', views.duplicates_dismiss_view),
     path('api/duplicates/delete/', views.duplicates_delete_view),
+    path('api/duplicates/not-duplicate/', views.duplicates_not_duplicate_view),
     path('api/auth/login/', views.login_view),
     path('api/auth/logout/', views.logout_view),
     path('api/auth/session/', views.session_view),

@@ -19,6 +19,7 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
   // selected: { [group_id]: Set of nd_ids marked for DELETION }
   const [selected, setSelected] = useState({});
   const [confirming, setConfirming] = useState(null); // group_id being confirmed
+  const [confirmingNotDup, setConfirmingNotDup] = useState(null); // group_id for not-duplicate confirm
   const pollRef = useRef(null);
   const abortRef = useRef(null);
 
@@ -120,6 +121,18 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
     } catch (e) { notify(e.message, 'error'); }
   };
 
+  const handleNotDuplicate = async (groupId) => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+    try {
+      await api.markNotDuplicate(groupId, group.songs.map(s => s.nd_id));
+      notify(t('duplicates.not_duplicate_done'));
+      setConfirmingNotDup(null);
+      setGroups(prev => prev.filter(g => g.id !== groupId));
+      setTotal(prev => Math.max(0, prev - 1));
+    } catch (e) { notify(e.message, 'error'); }
+  };
+
   const isRunning = scanState.status === 'running';
   const isDone = scanState.status === 'done';
   const isError = scanState.status === 'error';
@@ -189,6 +202,20 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
                 >
                   <X size={12} /> {t('duplicates.dismiss')}
                 </button>
+                {confirmingNotDup === group.id ? (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-dim)', maxWidth: 200 }}>{t('duplicates.not_duplicate_confirm')}</span>
+                    <button onClick={() => handleNotDuplicate(group.id)} style={{ padding: '5px 10px', borderRadius: 4, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{t('duplicates.confirm_yes')}</button>
+                    <button onClick={() => setConfirmingNotDup(null)} style={{ padding: '5px 10px', borderRadius: 4, border: '1px solid var(--border)', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 12 }}>{t('duplicates.cancel')}</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmingNotDup(group.id)}
+                    style={{ padding: '5px 12px', borderRadius: 4, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Music size={12} /> {t('duplicates.not_duplicate')}
+                  </button>
+                )}
                 {confirming === group.id ? (
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: 'var(--red)' }}>{t('duplicates.confirm_delete', { count: toDeleteCount })}</span>

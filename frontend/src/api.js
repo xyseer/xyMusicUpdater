@@ -97,6 +97,7 @@ export const api = {
   getDuplicates: (signal, page = 1, page_size = 10) => instance.get('/duplicates/', { params: { page, page_size }, signal }).then(r => r.data),
   dismissDuplicateGroup: (group_id) => instance.post('/duplicates/dismiss/', { group_id }).then(r => r.data),
   deleteDuplicates: (nd_ids) => instance.post('/duplicates/delete/', { nd_ids }).then(r => r.data),
+  markNotDuplicate: (group_id, nd_ids) => instance.post('/duplicates/not-duplicate/', { group_id, nd_ids }).then(r => r.data),
   setTimeout: (seconds) => {
     instance.defaults.timeout = (seconds || 15) * 1000;
   }
