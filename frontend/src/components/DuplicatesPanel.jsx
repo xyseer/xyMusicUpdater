@@ -6,6 +6,7 @@ import { ScrollingText } from './ScrollingText';
 import defaultCover from '../assets/default-cover.svg';
 
 const fmt = (s) => { if (!s) return '--:--'; const m = Math.floor(s / 60); return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`; };
+const fmtSize = (b) => { if (!b) return ''; if (b >= 1e9) return `${(b / 1e9).toFixed(1)} GB`; if (b >= 1e6) return `${(b / 1e6).toFixed(1)} MB`; return `${Math.round(b / 1e3)} KB`; };
 
 export const DuplicatesPanel = ({ notify, config = {} }) => {
   const pageSize = parseInt(config.DEFAULT_pageSize || 10);
@@ -231,7 +232,10 @@ export const DuplicatesPanel = ({ notify, config = {} }) => {
                     <ScrollingText text={song.artist || '—'} style={{ fontSize: 11, color: 'var(--text-dim)' }} />
                     <ScrollingText text={song.path || ''} style={{ fontSize: 10, color: 'var(--accent)', opacity: 0.7, fontFamily: 'monospace' }} />
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>{fmt(song.duration)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0, textAlign: 'right' }}>
+                    <div>{fmt(song.duration)}</div>
+                    {song.size > 0 && <div style={{ fontSize: 10, opacity: 0.7 }}>{fmtSize(song.size)}</div>}
+                  </div>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${markedDelete ? 'var(--red)' : 'var(--green)'}`, background: markedDelete ? 'rgba(235,87,87,0.2)' : 'rgba(39,174,96,0.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {markedDelete
                       ? <Trash2 size={9} color="var(--red)" />
