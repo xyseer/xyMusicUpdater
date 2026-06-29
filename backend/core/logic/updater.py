@@ -1,5 +1,6 @@
 import hashlib
 import os
+import platform
 import re
 import shutil
 import signal
@@ -14,7 +15,7 @@ from .utils import emit
 _YTDLP_BIN = "/usr/local/bin/yt-dlp"
 _RELEASE_BASE = "https://github.com/yt-dlp/yt-dlp/releases/latest/download"
 # yt-dlp uses strict date-based versioning; anything else is suspicious
-_VERSION_RE = re.compile(r"^\d{4}\.\d{2}\.\d{2}$")
+_VERSION_RE = re.compile(r"^\d{4}\.\d{2}\.\d{2}(\.\d+)?$")
 # Validate a hex SHA-256 digest (64 lowercase hex chars)
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
@@ -49,17 +50,19 @@ def update_ytdlp() -> None:
             emit(f"Failed to fetch SHA2-256SUMS: {e}", level="error")
             return
 
-        # ── 2. Parse expected hash for the Linux standalone binary ──────────
-        expected_sha = _parse_sha256sum(sums_text, "yt-dlp")
+        # ── 2. Parse expected hash for the correct arch's standalone binary ──
+        bin_name = _ytdlp_bin_filename()
+        emit(f"Detected platform: {platform.machine()} → downloading '{bin_name}'")
+        expected_sha = _parse_sha256sum(sums_text, bin_name)
         if not expected_sha:
             emit(
-                "SECURITY: 'yt-dlp' entry not found in SHA2-256SUMS — cannot verify integrity. Aborting.",
+                f"SECURITY: '{bin_name}' entry not found in SHA2-256SUMS — cannot verify integrity. Aborting.",
                 level="error",
             )
             return
 
         # ── 3. Download binary to a temp file (never written to live path yet) ──
-        bin_url = f"{_RELEASE_BASE}/yt-dlp"
+        bin_url = f"{_RELEASE_BASE}/{bin_name}"
         tmp_path = None
         try:
             with tempfile.NamedTemporaryFile(delete=False, dir="/tmp", prefix="yt-dlp-new-") as tmp:
@@ -117,6 +120,16 @@ def update_ytdlp() -> None:
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
+
+def _ytdlp_bin_filename() -> str:
+    """Return the yt-dlp GitHub release filename for the current platform."""
+    machine = platform.machine().lower()
+    if machine in ("aarch64", "arm64"):
+        return "yt-dlp_linux_aarch64"
+    if machine.startswith("armv7"):
+        return "yt-dlp_linux_armv7l"
+    return "yt-dlp"
+
 
 def _ytdlp_version() -> str:
     try:

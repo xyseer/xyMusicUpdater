@@ -6,6 +6,7 @@ from urllib.parse import unquote
 from .utils import _cfg, emit
 
 _RESULTS_FILE = Path("/app/data/duplicates.json")
+_NEVER_DUPLICATE_FILE = Path("/app/data/duplicate_never.json")
 _scan_lock = threading.Lock()
 
 DURATION_WINDOW = 30.0   # seconds — songs within this range are compared
@@ -190,6 +191,8 @@ def scan_duplicates(job=None) -> None:
             if pa != pb:
                 parent[pa] = pb
 
+        never_pairs = get_never_duplicate_pairs()
+
         n = len(fingerprints)
         pairs_checked = 0
         for i in range(n):
@@ -199,7 +202,9 @@ def scan_duplicates(job=None) -> None:
                 sim = _similarity(fingerprints[i]["fp"], fingerprints[j]["fp"])
                 pairs_checked += 1
                 if sim >= threshold:
-                    union(fingerprints[i]["nd_id"], fingerprints[j]["nd_id"])
+                    pair = frozenset({fingerprints[i]["nd_id"], fingerprints[j]["nd_id"]})
+                    if pair not in never_pairs:
+                        union(fingerprints[i]["nd_id"], fingerprints[j]["nd_id"])
 
         emit(f"Checked {pairs_checked} pairs.", job=job)
 
@@ -234,6 +239,27 @@ def scan_duplicates(job=None) -> None:
         emit(f"Duplicate scan failed: {e}\n{traceback.format_exc()}", level="error", job=job)
     finally:
         _scan_lock.release()
+
+def get_never_duplicate_pairs() -> set:
+    """Return a set of frozensets, each containing two nd_ids that must never be grouped."""
+    try:
+        if not _NEVER_DUPLICATE_FILE.exists():
+            return set()
+        pairs = json.loads(_NEVER_DUPLICATE_FILE.read_text())
+        return {frozenset(p) for p in pairs if len(p) == 2}
+    except Exception:
+        return set()
+
+
+def mark_not_duplicate(nd_ids: List[str]) -> None:
+    """Permanently mark every pair within nd_ids as never-duplicate."""
+    from itertools import combinations
+    existing = get_never_duplicate_pairs()
+    for a, b in combinations(nd_ids, 2):
+        existing.add(frozenset({a, b}))
+    _NEVER_DUPLICATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _NEVER_DUPLICATE_FILE.write_text(json.dumps([sorted(p) for p in existing]))
+
 
 def dismiss_group(group_id: str) -> bool:
     state = get_scan_state()
