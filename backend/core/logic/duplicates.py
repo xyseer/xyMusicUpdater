@@ -149,10 +149,14 @@ def scan_duplicates(job=None) -> None:
 
             dur, fp = _fpcalc(file_path)
             if fp:
+                try:
+                    file_size = os.path.getsize(file_path)
+                except OSError:
+                    file_size = 0
                 fingerprints.append({
                     "nd_id": nd_id, "path": file_path,
                     "title": title or "", "artist": artist or "",
-                    "duration": dur or (db_dur or 0), "fp": fp,
+                    "duration": dur or (db_dur or 0), "size": file_size, "fp": fp,
                 })
                 state["fingerprinted"] = len(fingerprints)
             else:
@@ -212,7 +216,7 @@ def scan_duplicates(job=None) -> None:
                     "songs": [
                         {"nd_id": m["nd_id"], "path": m["path"],
                          "title": m["title"], "artist": m["artist"],
-                         "duration": round(m["duration"], 1)}
+                         "duration": round(m["duration"], 1), "size": m.get("size", 0)}
                         for m in members
                     ],
                 })
