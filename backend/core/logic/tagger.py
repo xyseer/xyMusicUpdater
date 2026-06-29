@@ -208,25 +208,70 @@ def apply_manual_tags_to_file(path: Path, data: Dict[str, Any]) -> None:
         except Exception:
             pass
 
-    if path.suffix.lower() == ".mp3":
+    ext = path.suffix.lower()
+
+    if ext == ".mp3":
         from mutagen.id3 import ID3, TIT2, TPE1, TALB, TPE2, APIC, TCMP, ID3NoHeaderError
         try:
             tags = ID3(path)
         except ID3NoHeaderError:
             tags = ID3()
-        
+
         tags["TIT2"] = TIT2(encoding=3, text=t)
         tags["TPE1"] = TPE1(encoding=3, text=a)
         tags["TALB"] = TALB(encoding=3, text=al)
         tags["TPE2"] = TPE2(encoding=3, text=aa)
-        
+
         if data.get("compilation"):
             tags["TCMP"] = TCMP(encoding=3, text="1")
-        
+
         if c_d:
             tags.delall("APIC")
             tags["APIC"] = APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=c_d)
         tags.save(path)
+
+    elif ext == ".flac":
+        from mutagen.flac import FLAC, Picture
+        tags = FLAC(path)
+        if t: tags["title"] = [t]
+        if a: tags["artist"] = [a]
+        if al: tags["album"] = [al]
+        if aa: tags["albumartist"] = [aa]
+        if data.get("compilation"):
+            tags["compilation"] = ["1"]
+        if c_d:
+            pic = Picture()
+            pic.type = 3
+            pic.mime = "image/jpeg"
+            pic.data = c_d
+            tags.clear_pictures()
+            tags.add_picture(pic)
+        tags.save()
+
+    elif ext in (".m4a", ".mp4", ".aac"):
+        from mutagen.mp4 import MP4, MP4Cover
+        tags = MP4(path)
+        if t: tags["\xa9nam"] = [t]
+        if a: tags["\xa9ART"] = [a]
+        if al: tags["\xa9alb"] = [al]
+        if aa: tags["aART"] = [aa]
+        if data.get("compilation"):
+            tags["cpil"] = True
+        if c_d:
+            tags["covr"] = [MP4Cover(c_d, imageformat=MP4Cover.FORMAT_JPEG)]
+        tags.save()
+
+    elif ext in (".ogg", ".opus", ".oga"):
+        from mutagen.oggvorbis import OggVorbis
+        from mutagen.oggopus import OggOpus
+        tags = (OggOpus if ext == ".opus" else OggVorbis)(path)
+        if t: tags["title"] = [t]
+        if a: tags["artist"] = [a]
+        if al: tags["album"] = [al]
+        if aa: tags["albumartist"] = [aa]
+        if data.get("compilation"):
+            tags["compilation"] = ["1"]
+        tags.save()
 
 def _pending_cover_sidecar(path: Path) -> Path:
     return Path(str(path) + ".cover_url")
